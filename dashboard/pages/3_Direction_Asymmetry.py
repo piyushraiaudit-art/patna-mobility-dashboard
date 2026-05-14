@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard.data import load_observations
-from dashboard.metrics import (
+from data import load_observations
+from metrics import (
     GATING, gating_state, direction_asymmetry, am_peak_observations,
     pm_peak_observations, weekday_observations,
 )
-from dashboard.viz import direction_asymmetry_chart
+from viz import direction_asymmetry_chart
 
 st.set_page_config(page_title="Direction Asymmetry", page_icon="↔️", layout="wide")
 

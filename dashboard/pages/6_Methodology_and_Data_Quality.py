@@ -20,13 +20,13 @@ import pandas as pd
 import plotly
 import streamlit as st
 
-from dashboard.data import (
+from data import (
     AUDIT_WINDOW_END, AUDIT_WINDOW_START, data_quality_report, load_observations,
 )
-from dashboard.metrics import (
+from metrics import (
     AM_PEAK_HOURS, PM_PEAK_HOURS, ACTIVE_HOURS, SHORT_CORRIDOR_IDS,
 )
-from dashboard.viz import coverage_heatmap, cr_cdf_chart
+from viz import coverage_heatmap, cr_cdf_chart
 
 st.set_page_config(page_title="Methodology & Data Quality", page_icon="📐", layout="wide")
 

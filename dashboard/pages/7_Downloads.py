@@ -11,12 +11,12 @@ from datetime import datetime
 
 import streamlit as st
 
-from dashboard.data import data_quality_report, load_observations
-from dashboard.exports import build_excel_annexure, build_png_zip
-from dashboard.metrics import (
+from data import data_quality_report, load_observations
+from exports import build_excel_annexure, build_png_zip
+from metrics import (
     bti as compute_bti, direction_asymmetry, hourly_median_cr, ranking_table,
 )
-from dashboard.viz import (
+from viz import (
     coverage_heatmap, cr_cdf_chart, direction_asymmetry_chart, hourly_heatmap,
     ranking_bar, reliability_chart,
 )

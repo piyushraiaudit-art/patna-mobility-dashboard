@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard.data import load_observations
-from dashboard.metrics import (
+from data import load_observations
+from metrics import (
     GATING, gating_state, hourly_median_cr, ranking_table, weekend_observations,
 )
-from dashboard.viz import hourly_heatmap
+from viz import hourly_heatmap
 
 st.set_page_config(page_title="Hourly Heatmap", page_icon="🌡️", layout="wide")
 

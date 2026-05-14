@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard.data import load_observations, data_quality_report, AUDIT_WINDOW_START, AUDIT_WINDOW_END
-from dashboard.metrics import (
+from data import load_observations, data_quality_report, AUDIT_WINDOW_START, AUDIT_WINDOW_END
+from metrics import (
     GATING, gating_state, ranking_table, weekday_observations, weekend_observations,
     peak_observations,
 )

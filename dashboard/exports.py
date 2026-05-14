@@ -20,8 +20,8 @@ from openpyxl.formatting.rule import ColorScaleRule
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from dashboard.data import AUDIT_WINDOW_END, AUDIT_WINDOW_START
-from dashboard.metrics import (
+from data import AUDIT_WINDOW_END, AUDIT_WINDOW_START
+from metrics import (
     SHORT_CORRIDOR_IDS, am_peak_observations, bti as compute_bti, cv as compute_cv,
     direction_asymmetry, hourly_median_cr, minutes_lost_table, peak_observations,
     pm_peak_observations, ranking_table, weekday_observations,

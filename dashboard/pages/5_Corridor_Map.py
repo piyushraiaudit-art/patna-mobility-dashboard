@@ -11,8 +11,8 @@ import pandas as pd
 import pydeck as pdk
 import streamlit as st
 
-from dashboard.data import load_observations
-from dashboard.metrics import ranking_table
+from data import load_observations
+from metrics import ranking_table
 
 st.set_page_config(page_title="Corridor Map", page_icon="🗺️", layout="wide")
 

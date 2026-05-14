@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard.data import load_observations
-from dashboard.metrics import (
+from data import load_observations
+from metrics import (
     GATING, gating_state, bti as compute_bti, cv as compute_cv, peak_observations,
     weekday_observations,
 )
-from dashboard.viz import reliability_chart
+from viz import reliability_chart
 
 st.set_page_config(page_title="Reliability Index", page_icon="⏱️", layout="wide")
 

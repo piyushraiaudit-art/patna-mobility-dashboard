@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import streamlit as st
 
-from dashboard.data import load_observations
-from dashboard.metrics import (
+from data import load_observations
+from metrics import (
     GATING, gating_state, ranking_table, minutes_lost_table, SHORT_CORRIDOR_IDS,
 )
-from dashboard.viz import ranking_bar
+from viz import ranking_bar
 
 st.set_page_config(page_title="Congestion Index Ranking", page_icon="📊", layout="wide")
 
