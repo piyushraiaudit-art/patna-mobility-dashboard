@@ -1,0 +1,57 @@
+corridor_id,corridor_name,direction,origin_lat,origin_lng,dest_lat,dest_lng,est_distance_km
+1,Bailey Road: Income Tax Roundabout ↔ Hartali Mor,A_to_B,25.6094,85.1322,25.6096,85.1166,1.8
+1,Bailey Road: Income Tax Roundabout ↔ Hartali Mor,B_to_A,25.6096,85.1166,25.6094,85.1322,1.8
+2,Ashok Rajpath: Gandhi Maidan ↔ NIT Patna,A_to_B,25.6186,85.1437,25.6206,85.1717,3.5
+2,Ashok Rajpath: Gandhi Maidan ↔ NIT Patna,B_to_A,25.6206,85.1717,25.6186,85.1437,3.5
+3,Boring Road/Canal: Boring Canal Rd Chauraha ↔ Rajiv Nagar,A_to_B,25.615,85.1187,25.637,85.1017,3.0
+3,Boring Road/Canal: Boring Canal Rd Chauraha ↔ Rajiv Nagar,B_to_A,25.637,85.1017,25.615,85.1187,3.0
+4,CBD Link: Dak Bungalow ↔ Boring Road Crossing,A_to_B,25.6079,85.1374,25.6125,85.1238,1.5
+4,CBD Link: Dak Bungalow ↔ Boring Road Crossing,B_to_A,25.6125,85.1238,25.6079,85.1374,1.5
+5,Kankarbagh Main Rd: Patna Junction ↔ NMCH,A_to_B,25.603,85.1365,25.596,85.183,6.0
+5,Kankarbagh Main Rd: Patna Junction ↔ NMCH,B_to_A,25.596,85.183,25.603,85.1365,6.0
+6,NH-30 Stretch: Mithapur Golambar ↔ Anisabad,A_to_B,25.5947,85.1317,25.584,85.1027,4.5
+6,NH-30 Stretch: Mithapur Golambar ↔ Anisabad,B_to_A,25.584,85.1027,25.5947,85.1317,4.5
+7,Patna–Danapur Rd: Saguna More ↔ Danapur Cantt,A_to_B,25.6105,85.0487,25.6295,85.045,3.5
+7,Patna–Danapur Rd: Saguna More ↔ Danapur Cantt,B_to_A,25.6295,85.045,25.6105,85.0487,3.5
+8,North-South Access: Anisabad ↔ Gandhi Maidan,A_to_B,25.584,85.1027,25.6186,85.1437,6.0
+8,North-South Access: Anisabad ↔ Gandhi Maidan,B_to_A,25.6186,85.1437,25.584,85.1027,6.0
+9A,Ganga Path: Digha ↔ Gandhi Maidan,A_to_B,25.6425,85.0934,25.626,85.14,6.5
+9A,Ganga Path: Digha ↔ Gandhi Maidan,B_to_A,25.626,85.14,25.6425,85.0934,6.5
+9B,Ganga Path: Gandhi Maidan ↔ Gai Ghat,A_to_B,25.626,85.14,25.603,85.198,6.5
+9B,Ganga Path: Gandhi Maidan ↔ Gai Ghat,B_to_A,25.603,85.198,25.626,85.14,6.5
+9C,Ganga Path: Gai Ghat ↔ Didarganj,A_to_B,25.603,85.198,25.5866,85.2476,7.5
+9C,Ganga Path: Gai Ghat ↔ Didarganj,B_to_A,25.5866,85.2476,25.603,85.198,7.5
+10,Fraser Road: Dak Bungalow ↔ Patna Junction,A_to_B,25.6079,85.1374,25.603,85.1365,1.0
+10,Fraser Road: Dak Bungalow ↔ Patna Junction,B_to_A,25.603,85.1365,25.6079,85.1374,1.0
+11A,New Bypass: AIIMS ↔ Beur Bypass,A_to_B,25.5658,85.0425,25.565,85.093,5.5
+11A,New Bypass: AIIMS ↔ Beur Bypass,B_to_A,25.565,85.093,25.5658,85.0425,5.5
+11B,New Bypass: Beur Bypass ↔ Khemnichak,A_to_B,25.565,85.093,25.572,85.15,6.0
+11B,New Bypass: Beur Bypass ↔ Khemnichak,B_to_A,25.572,85.15,25.565,85.093,6.0
+11C,New Bypass: Khemnichak ↔ Zero Mile,A_to_B,25.572,85.15,25.5786,85.195,5.5
+11C,New Bypass: Khemnichak ↔ Zero Mile,B_to_A,25.5786,85.195,25.572,85.15,5.5
+12,Atal Path: R Block Golambar ↔ Digha,A_to_B,25.5985,85.1264,25.6425,85.0934,6.5
+12,Atal Path: R Block Golambar ↔ Digha,B_to_A,25.6425,85.0934,25.5985,85.1264,6.5
+13,Transit Link: Patna Junction ↔ Patna Airport,A_to_B,25.603,85.1365,25.5925,85.0886,6.0
+13,Transit Link: Patna Junction ↔ Patna Airport,B_to_A,25.5925,85.0886,25.603,85.1365,6.0
+14,Outgrowth Access: Phulwarisharif ↔ AIIMS Patna,A_to_B,25.575,85.0784,25.5658,85.0425,4.5
+14,Outgrowth Access: Phulwarisharif ↔ AIIMS Patna,B_to_A,25.5658,85.0425,25.575,85.0784,4.5
+15,Western Commute: Saguna More ↔ Patliputra Golambar,A_to_B,25.6105,85.0487,25.6322,85.113,7.0
+15,Western Commute: Saguna More ↔ Patliputra Golambar,B_to_A,25.6322,85.113,25.6105,85.0487,7.0
+16,Ashiana-Digha Road: Ashiana More ↔ Digha Ghat,A_to_B,25.6083,85.0768,25.6425,85.0934,4.5
+16,Ashiana-Digha Road: Ashiana More ↔ Digha Ghat,B_to_A,25.6425,85.0934,25.6083,85.0768,4.5
+17,Old Bypass Link: Rajendra Nagar Terminal ↔ Kankarbagh Colony More,A_to_B,25.5975,85.1557,25.5977,85.1438,1.5
+17,Old Bypass Link: Rajendra Nagar Terminal ↔ Kankarbagh Colony More,B_to_A,25.5977,85.1438,25.5975,85.1557,1.5
+18,Eastern Heritage: Kumhrar Park ↔ Patna Sahib Station,A_to_B,25.5984,85.1764,25.5844,85.2288,6.0
+18,Eastern Heritage: Kumhrar Park ↔ Patna Sahib Station,B_to_A,25.5844,85.2288,25.5984,85.1764,6.0
+19,Educational Corridor: Kurji Holy Family ↔ Patna Women's College,A_to_B,25.6373,85.1096,25.609,85.127,4.0
+19,Educational Corridor: Kurji Holy Family ↔ Patna Women's College,B_to_A,25.609,85.127,25.6373,85.1096,4.0
+20,Malahi Pakari Route: Patna University ↔ Malahi Pakari,A_to_B,25.62,85.155,25.591,85.147,4.5
+20,Malahi Pakari Route: Patna University ↔ Malahi Pakari,B_to_A,25.591,85.147,25.62,85.155,4.5
+21,Beerchand Patel Path: Income Tax Golambar ↔ R-Block Golambar,A_to_B,25.6094,85.1322,25.5985,85.1264,1.25
+21,Beerchand Patel Path: Income Tax Golambar ↔ R-Block Golambar,B_to_A,25.5985,85.1264,25.6094,85.1322,1.25
+22,Western Railway Link: Danapur Station ↔ Saguna More,A_to_B,25.5866,85.0454,25.6105,85.0487,3.0
+22,Western Railway Link: Danapur Station ↔ Saguna More,B_to_A,25.6105,85.0487,25.5866,85.0454,3.0
+23,Dense Commercial Hub: Rajendra Nagar Terminal ↔ Kadamkuan,A_to_B,25.5975,85.1557,25.6075,85.15,2.0
+23,Dense Commercial Hub: Rajendra Nagar Terminal ↔ Kadamkuan,B_to_A,25.6075,85.15,25.5975,85.1557,2.0
+24,Southern Bypass Feeder: Anisabad Golambar ↔ Phulwarisharif,A_to_B,25.584,85.1027,25.575,85.0784,3.5
+24,Southern Bypass Feeder: Anisabad Golambar ↔ Phulwarisharif,B_to_A,25.575,85.0784,25.584,85.1027,3.5
