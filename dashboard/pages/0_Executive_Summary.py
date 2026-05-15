@@ -26,6 +26,7 @@ from viz import (
 from insights import top_findings_html
 from ui import (
     KPI, apply_page_chrome, audit_context_caption, callout, kpi_row, page_header,
+    top_rank_list,
 )
 
 
@@ -137,16 +138,23 @@ callout(findings_html, kind="insight",
         title="Top 3 findings — what the data says today")
 
 # ---------------------------------------------------------------------------
-# Mini-map of top 5 worst corridors
+# Mini-map of top 5 worst corridors — paired with a colour-matched rank list
 # ---------------------------------------------------------------------------
 st.markdown("### Where the worst congestion is happening")
 st.caption(
-    "Top 5 worst corridors highlighted in full colour; remaining corridors faded "
-    "for geographic context. Hover any line for details."
+    "Numbered badges on the map match the ranked list on the right. "
+    "Top 5 corridors are drawn in full colour and weight; the remaining "
+    "23 are faded for geographic context."
 )
 geom = build_corridor_geometry(df, ranking)
-deck = mini_map(geom, top_n=5)
-st.pydeck_chart(deck, use_container_width=True, height=380)
+map_col, list_col = st.columns([2, 1], gap="medium")
+with map_col:
+    st.pydeck_chart(mini_map(geom, top_n=5), use_container_width=True, height=420)
+with list_col:
+    top_rank_list(
+        ranking, top_n=5, title="Top 5 worst corridors",
+        footer="Badge colour = PHCI severity band. Hover any line on the map for full statistics.",
+    )
 
 # ---------------------------------------------------------------------------
 # Two compact charts

@@ -522,11 +522,17 @@ def build_corridor_geometry(df: pd.DataFrame, ranking: pd.DataFrame) -> pd.DataF
     return display
 
 
-def mini_map(display: pd.DataFrame, top_n: int = 5) -> pdk.Deck:
+def mini_map(display: pd.DataFrame, top_n: int = 5,
+             show_labels: bool = False) -> pdk.Deck:
     """Compact pydeck map showing the top N worst corridors with subtle context.
 
     All 28 corridors are drawn faintly so the geographic context is preserved;
-    the top N are emphasised with full opacity and thicker lines.
+    the top N are emphasised with full opacity, thicker lines, and a small
+    rank badge at the line's midpoint.
+
+    `show_labels=False` (default) renders rank-only badges; pair with an
+    adjacent text list for the corridor names. `show_labels=True` writes the
+    full corridor name on the map (legacy, can crowd the canvas).
     """
     if display.empty:
         return pdk.Deck(layers=[], initial_view_state=pdk.ViewState(
@@ -534,8 +540,8 @@ def mini_map(display: pd.DataFrame, top_n: int = 5) -> pdk.Deck:
         ))
     df = display.copy()
     df["is_top"] = df["rank"] <= top_n
-    df["line_alpha"] = df["is_top"].map({True: 230, False: 70}).astype(int)
-    df["line_width"] = df["is_top"].map({True: 7, False: 3}).astype(int)
+    df["line_alpha"] = df["is_top"].map({True: 240, False: 55}).astype(int)
+    df["line_width"] = df["is_top"].map({True: 8, False: 3}).astype(int)
 
     path_layer = pdk.Layer(
         "PathLayer",
@@ -544,34 +550,56 @@ def mini_map(display: pd.DataFrame, top_n: int = 5) -> pdk.Deck:
         get_color=["color_r", "color_g", "color_b", "line_alpha"],
         get_width="line_width",
         width_min_pixels=2,
-        width_max_pixels=10,
+        width_max_pixels=11,
         pickable=True,
         cap_rounded=True,
         joint_rounded=True,
     )
+
+    # Small rank badge ("1", "2", …) at the midpoint of each top-N corridor.
+    # Tighter and far less visually noisy than full corridor names.
     label_df = df[df["is_top"]].copy()
-    label_df["label_text"] = label_df.apply(
-        lambda r: f"{int(r['rank'])}. {r['corridor_name'][:28]}", axis=1
-    )
+    label_df["badge_text"] = label_df["rank"].astype(int).astype(str)
     label_df["mid_lng"] = label_df["coords"].apply(
         lambda c: c[len(c) // 2][0] if c else 0
     )
     label_df["mid_lat"] = label_df["coords"].apply(
         lambda c: c[len(c) // 2][1] if c else 0
     )
-    label_layer = pdk.Layer(
-        "TextLayer",
-        data=label_df,
-        get_position=["mid_lng", "mid_lat"],
-        get_text="label_text",
-        get_size=12,
-        get_color=[15, 23, 42, 230],
-        get_alignment_baseline="'center'",
-        background=True,
-        get_background_color=[255, 255, 255, 200],
-        get_border_color=[226, 232, 240, 255],
-        get_border_width=1,
-    )
+
+    layers = [path_layer]
+    if show_labels:
+        label_df["label_text"] = label_df.apply(
+            lambda r: f"{int(r['rank'])}. {r['corridor_name'][:28]}", axis=1
+        )
+        layers.append(pdk.Layer(
+            "TextLayer",
+            data=label_df,
+            get_position=["mid_lng", "mid_lat"],
+            get_text="label_text",
+            get_size=12,
+            get_color=[15, 23, 42, 230],
+            get_alignment_baseline="'center'",
+            background=True,
+            get_background_color=[255, 255, 255, 220],
+            get_border_color=[226, 232, 240, 255],
+            get_border_width=1,
+        ))
+    else:
+        layers.append(pdk.Layer(
+            "TextLayer",
+            data=label_df,
+            get_position=["mid_lng", "mid_lat"],
+            get_text="badge_text",
+            get_size=15,
+            get_color=[255, 255, 255, 255],
+            get_alignment_baseline="'center'",
+            background=True,
+            get_background_color=["color_r", "color_g", "color_b", 240],
+            get_border_color=[255, 255, 255, 255],
+            get_border_width=2,
+        ))
+
     tooltip = {
         "html": "<b>★ Rank {rank} — {corridor_name}</b><br/>PHCI: {phci_label}",
         "style": {"backgroundColor": "white", "color": "#0F172A",
@@ -579,7 +607,7 @@ def mini_map(display: pd.DataFrame, top_n: int = 5) -> pdk.Deck:
                   "border": "1px solid #E2E8F0", "borderRadius": "6px"},
     }
     return pdk.Deck(
-        layers=[path_layer, label_layer],
+        layers=layers,
         initial_view_state=pdk.ViewState(
             longitude=85.13, latitude=25.605, zoom=11.2, pitch=0, bearing=0,
         ),

@@ -156,6 +156,69 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; letter-spacing: -0
 .patna-pill-prelim     { background: #FEF3C7; color: #92400E; }
 .patna-pill-stable     { background: #D1FAE5; color: #065F46; }
 
+/* Ranked-list (paired with mini-map) */
+.patna-ranklist {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.patna-ranklist-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 10px 0;
+}
+.patna-ranklist-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid #F1F5F9;
+}
+.patna-ranklist-row:last-child { border-bottom: none; }
+.patna-ranklist-badge {
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    border-radius: 999px;
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15);
+}
+.patna-ranklist-body { flex: 1 1 auto; min-width: 0; }
+.patna-ranklist-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0F172A;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.patna-ranklist-meta {
+    font-size: 11px;
+    color: #64748B;
+    margin-top: 2px;
+}
+.patna-ranklist-phci {
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F172A;
+    font-variant-numeric: tabular-nums;
+}
+.patna-ranklist-foot {
+    font-size: 10.5px;
+    color: #94A3B8;
+    margin: 8px 0 0 0;
+    padding-top: 8px;
+    border-top: 1px dashed #E2E8F0;
+    line-height: 1.4;
+}
+
 /* Heatmap inline legend */
 .patna-legend {
     display: flex; flex-wrap: wrap; gap: 6px;
@@ -318,6 +381,68 @@ def audit_context_caption(extra: str = "") -> None:
 # ---------------------------------------------------------------------------
 # Heatmap inline legend
 # ---------------------------------------------------------------------------
+
+def top_rank_list(ranking, top_n: int = 5, title: str = "Top corridors",
+                  footer: str = "") -> None:
+    """Color-matched ranked list designed to sit beside the mini-map.
+
+    `ranking` must include columns: rank, corridor_name, phci, phci_hour
+    (and optionally phci_direction). Badge colors mirror the PHCI colour
+    scale used on the map, so a number in the list visually maps to a
+    line on the map without any text labels on the map itself.
+    """
+    if ranking is None or len(ranking) == 0:
+        return
+    rows_html = []
+    sub = ranking.head(top_n)
+    for _, r in sub.iterrows():
+        phci_v = float(r["phci"])
+        rgb = _phci_rgb(phci_v)
+        badge_bg = f"rgb({rgb[0]},{rgb[1]},{rgb[2]})"
+        name = str(r["corridor_name"])
+        meta_bits = []
+        if "phci_hour" in r and r["phci_hour"] is not None:
+            try:
+                meta_bits.append(f"worst at {int(r['phci_hour']):02d}:00")
+            except (TypeError, ValueError):
+                pass
+        if "phci_direction" in r and r["phci_direction"]:
+            meta_bits.append(str(r["phci_direction"]))
+        meta = " · ".join(meta_bits) or "&nbsp;"
+        rows_html.append(
+            f'<div class="patna-ranklist-row">'
+            f'<span class="patna-ranklist-badge" style="background:{badge_bg};">'
+            f'{int(r["rank"])}</span>'
+            f'<div class="patna-ranklist-body">'
+            f'<div class="patna-ranklist-name" title="{name}">{name}</div>'
+            f'<div class="patna-ranklist-meta">{meta}</div>'
+            f'</div>'
+            f'<span class="patna-ranklist-phci">PHCI {phci_v:.2f}</span>'
+            f'</div>'
+        )
+    foot_html = f'<div class="patna-ranklist-foot">{footer}</div>' if footer else ""
+    st.markdown(
+        f'<div class="patna-ranklist">'
+        f'<div class="patna-ranklist-title">{title}</div>'
+        + "".join(rows_html) + foot_html + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _phci_rgb(v: float) -> tuple[int, int, int]:
+    """Mirror viz._phci_to_rgb so badge colors match the map lines."""
+    if v != v:  # NaN
+        return (156, 163, 175)
+    if v < 1.0:
+        return (59, 130, 246)
+    if v < 1.25:
+        return (252, 211, 77)
+    if v < 1.5:
+        return (249, 115, 22)
+    if v < 2.0:
+        return (220, 38, 38)
+    return (127, 29, 29)
+
 
 def heatmap_color_legend() -> None:
     """The CR colour-scale legend used above the heatmap and the map."""
