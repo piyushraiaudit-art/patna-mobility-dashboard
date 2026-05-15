@@ -24,8 +24,9 @@ from data import (
     AUDIT_WINDOW_END, AUDIT_WINDOW_START, data_quality_report, load_observations,
 )
 from metrics import (
-    AM_PEAK_HOURS, PM_PEAK_HOURS, ACTIVE_HOURS, SHORT_CORRIDOR_IDS,
+    AM_PEAK_HOURS, PM_PEAK_HOURS, ACTIVE_HOURS, SHORT_CORRIDOR_IDS, ranking_table,
 )
+from ui import apply_page_chrome, audit_context_caption, page_header
 from viz import coverage_heatmap, cr_cdf_chart
 
 st.set_page_config(page_title="Methodology & Data Quality", page_icon="📐", layout="wide")
@@ -39,12 +40,15 @@ def _load():
 df = _load()
 rep = data_quality_report(df)
 stats = rep["stats"]
+ranking = ranking_table(df)
 
-st.title("Methodology & Data Quality")
-st.caption(
-    "The audit-defensibility page. Formulas, coverage, failure log, distance drift, "
-    "and a reproducibility signature so two reviewers on two laptops can confirm "
-    "they are looking at identical numbers."
+apply_page_chrome(df, ranking, stats)
+
+page_header(
+    title="Methodology & Data Quality",
+    subtitle=("The audit-defensibility page. Formulas, coverage, failure log, "
+              "distance drift, and a reproducibility signature."),
+    eyebrow="Page 6",
 )
 
 # ---------------------------------------------------------------------------
@@ -301,7 +305,7 @@ with st.expander("Peer-city comparison (placeholder — 101-city programme)"):
         use_container_width=True,
     )
 
-st.caption(
+audit_context_caption(
     "Methodology page last refreshed at the same data-cache TTL as every other page. "
     "Re-running the dashboard against the same input files will reproduce every "
     "number above to the last decimal."

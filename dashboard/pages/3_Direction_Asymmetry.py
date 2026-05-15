@@ -1,18 +1,20 @@
 """Page 3 — Direction Asymmetry.
 
-Maps to brief output #3: inbound vs outbound congestion at AM and PM
-peak windows. Useful for one-way regulation or signal-timing recommendations.
+Brief output #3: inbound vs outbound congestion at AM and PM peak windows.
+Useful for one-way regulation or signal-timing recommendations.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from data import load_observations
+from data import data_quality_report, load_observations
+from insights import asymmetry_implication
 from metrics import (
-    GATING, gating_state, direction_asymmetry, am_peak_observations,
-    pm_peak_observations, weekday_observations,
+    GATING, am_peak_observations, direction_asymmetry, gating_state,
+    pm_peak_observations, ranking_table, weekday_observations,
 )
+from ui import apply_page_chrome, audit_context_caption, callout, page_header
 from viz import direction_asymmetry_chart
 
 st.set_page_config(page_title="Direction Asymmetry", page_icon="↔️", layout="wide")
@@ -23,13 +25,23 @@ def _load():
     return load_observations()
 
 
-df = _load()
+@st.cache_data(ttl=600)
+def _quality(_n: int):
+    return data_quality_report()
 
-st.title("Direction Asymmetry")
-st.caption(
-    "Brief output #3 — for each corridor, inbound (A→B) vs outbound (B→A) median "
-    "congestion ratio. Large gaps suggest one-way regulation, signal retiming, "
-    "or directional parking enforcement as candidate interventions."
+
+df = _load()
+ranking = ranking_table(df)
+quality = _quality(len(df))
+stats = quality["stats"]
+
+apply_page_chrome(df, ranking, stats)
+
+page_header(
+    title="Direction Asymmetry",
+    subtitle=("Brief output #3 — for each corridor, inbound (A→B) vs outbound (B→A) "
+              "median congestion ratio at AM and PM peaks."),
+    eyebrow="Page 3",
 )
 
 if df.empty:
@@ -47,38 +59,46 @@ pm_min = int(pm_obs.groupby(["corridor_id", "direction"]).size().min()) if not p
 state_am = gating_state(am_min, "direction_asymmetry")
 state_pm = gating_state(pm_min, "direction_asymmetry")
 
-col1, col2 = st.columns(2)
-col1.metric("AM-peak min n/direction", am_min, help=f"Stable at n ≥ {threshold.stable_n}")
-col2.metric("PM-peak min n/direction", pm_min, help=f"Stable at n ≥ {threshold.stable_n}")
-
 asym = direction_asymmetry(df)
 
+callout(asymmetry_implication(asym), kind="insight",
+        title="What direction asymmetry says about intervention")
+
+# ---------------------------------------------------------------------------
+# AM peak
+# ---------------------------------------------------------------------------
+st.subheader("AM peak (08:00–11:00 IST)")
 if state_am != "Locked":
-    if state_am == "Preliminary":
-        st.info(f"AM-peak **Preliminary** (n={am_min}).")
     st.plotly_chart(direction_asymmetry_chart(asym, "AM Peak"), use_container_width=True)
 else:
-    st.warning("🔒 AM-peak asymmetry locked — awaiting more morning observations.")
+    st.info("AM-peak asymmetry unlocks once each direction has more morning observations.")
 
 st.divider()
 
+# ---------------------------------------------------------------------------
+# PM peak
+# ---------------------------------------------------------------------------
+st.subheader("PM peak (17:00–20:00 IST)")
 if state_pm != "Locked":
-    if state_pm == "Preliminary":
-        st.info(f"PM-peak **Preliminary** (n={pm_min}).")
     st.plotly_chart(direction_asymmetry_chart(asym, "PM Peak"), use_container_width=True)
 else:
-    st.warning("🔒 PM-peak asymmetry locked — awaiting more evening observations.")
+    st.info("PM-peak asymmetry unlocks once each direction has more evening observations.")
 
 st.divider()
 
-st.subheader("Asymmetry table")
-display = asym.copy()
-for col in ("median_cr_A_to_B", "median_cr_B_to_A"):
-    if col in display.columns:
-        display[col] = display[col].round(3)
-display = display[[
-    "peak", "corridor_id", "corridor_name",
-    "median_cr_A_to_B", "median_cr_B_to_A", "asymmetry_pct",
-    "n_A_to_B", "n_B_to_A",
-]]
-st.dataframe(display, use_container_width=True, hide_index=True)
+# ---------------------------------------------------------------------------
+# Full table — collapsed
+# ---------------------------------------------------------------------------
+with st.expander("Full asymmetry table"):
+    display = asym.copy()
+    for col in ("median_cr_A_to_B", "median_cr_B_to_A"):
+        if col in display.columns:
+            display[col] = display[col].round(3)
+    display = display[[
+        "peak", "corridor_id", "corridor_name",
+        "median_cr_A_to_B", "median_cr_B_to_A", "asymmetry_pct",
+        "n_A_to_B", "n_B_to_A",
+    ]]
+    st.dataframe(display, use_container_width=True, hide_index=True)
+
+audit_context_caption()

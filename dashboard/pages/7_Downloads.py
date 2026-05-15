@@ -16,6 +16,7 @@ from exports import build_excel_annexure, build_png_zip
 from metrics import (
     bti as compute_bti, direction_asymmetry, hourly_median_cr, ranking_table,
 )
+from ui import apply_page_chrome, audit_context_caption, page_header
 from viz import (
     coverage_heatmap, cr_cdf_chart, direction_asymmetry_chart, hourly_heatmap,
     ranking_bar, reliability_chart,
@@ -30,19 +31,24 @@ def _load():
 
 
 df = _load()
+ranking = ranking_table(df)
+rep = data_quality_report(df) if not df.empty else None
+stats = rep["stats"] if rep is not None else None
 
-st.title("Downloads")
-st.caption(
-    "Audit-report-ready artefacts. The Excel workbook is the formal annexure; "
-    "the PNG zip carries every chart at 1600×1000 / 300 DPI for embedding in "
-    "the report's body text."
+if stats is not None:
+    apply_page_chrome(df, ranking, stats)
+
+page_header(
+    title="Downloads",
+    subtitle=("Audit-report-ready artefacts. The Excel workbook is the formal "
+              "annexure; the PNG zip carries every chart at 1600×1000 / 300 DPI."),
+    eyebrow="Page 7",
 )
 
 if df.empty:
     st.warning("No observations yet — exports unavailable.")
     st.stop()
 
-rep = data_quality_report(df)
 stamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 col1, col2 = st.columns(2)
@@ -79,7 +85,6 @@ with col2:
         "no rescaling artefacts."
     )
     if st.button("Build PNG bundle", use_container_width=True):
-        ranking = ranking_table(df)
         order = ranking["corridor_id"].tolist()
         hm = hourly_median_cr(df)
         figs = {
@@ -119,9 +124,8 @@ with col2:
         )
 
 st.divider()
-st.caption(
-    "Both bundles are stamped with the build timestamp in the filename so "
-    "multiple downloads do not overwrite each other. The Excel cover sheet "
-    "carries the MD5 of the observations dataframe — match against the "
-    "Methodology page to confirm provenance."
+audit_context_caption(
+    "Both bundles are stamped with the build timestamp in the filename. The Excel "
+    "cover sheet carries the observations MD5 — match against Page 6 to confirm "
+    "provenance."
 )

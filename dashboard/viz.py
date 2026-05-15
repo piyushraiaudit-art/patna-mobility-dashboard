@@ -10,8 +10,53 @@ of the audit's visual language and must stay consistent.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pandas as pd
 import plotly.graph_objects as go
+import pydeck as pdk
+
+# ---------------------------------------------------------------------------
+# Patna Plotly template — Modern-SaaS visual language used on every chart.
+# Inter font (loaded via UI CSS), soft slate gridlines, plenty of margin.
+# ---------------------------------------------------------------------------
+
+PATNA_TEMPLATE = go.layout.Template(
+    layout=go.Layout(
+        font=dict(
+            family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            color="#0F172A",
+            size=12,
+        ),
+        title=dict(font=dict(size=15, color="#0F172A"), x=0.0, xanchor="left"),
+        plot_bgcolor="#FFFFFF",
+        paper_bgcolor="#FFFFFF",
+        xaxis=dict(
+            gridcolor="#E2E8F0",
+            linecolor="#CBD5E1",
+            tickfont=dict(color="#475569", size=11),
+            title=dict(font=dict(color="#334155", size=12)),
+            zerolinecolor="#E2E8F0",
+        ),
+        yaxis=dict(
+            gridcolor="#E2E8F0",
+            linecolor="#CBD5E1",
+            tickfont=dict(color="#475569", size=11),
+            title=dict(font=dict(color="#334155", size=12)),
+            zerolinecolor="#E2E8F0",
+        ),
+        legend=dict(
+            font=dict(color="#334155", size=11),
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="#E2E8F0",
+            borderwidth=0,
+        ),
+        margin=dict(l=60, r=40, t=60, b=40),
+        colorway=["#4F46E5", "#F59E0B", "#10B981", "#EF4444", "#06B6D4", "#8B5CF6"],
+    )
+)
+
 
 # ---------------------------------------------------------------------------
 # The Patna Congestion Heatmap colour scale — manual, not a Plotly default.
@@ -42,6 +87,7 @@ def _empty_figure(message: str) -> go.Figure:
         font=dict(size=14, color="#6b7280"),
     )
     fig.update_layout(
+        template=PATNA_TEMPLATE,
         xaxis=dict(visible=False), yaxis=dict(visible=False),
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=20, r=20, t=40, b=20),
@@ -140,13 +186,14 @@ def hourly_heatmap(
             fig.add_vline(x=x_pos, line=dict(color="#374151", width=1, dash="dash"))
 
     fig.update_layout(
-        title=dict(text=f"<b>{title}</b><br><span style='font-size:11px;color:#6b7280'>{subtitle}</span>",
+        template=PATNA_TEMPLATE,
+        title=dict(text=f"<b>{title}</b><br><span style='font-size:11px;color:#64748B'>{subtitle}</span>",
                    x=0.0, xanchor="left"),
         xaxis_title="Hour of day (IST)",
         yaxis=dict(autorange="reversed"),  # worst at top
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=240, r=40, t=80, b=40),
-        height=max(420, 22 * len(corridor_order) + 120),
+        height=min(720, max(420, 22 * len(corridor_order) + 120)),
     )
     return fig
 
@@ -190,15 +237,16 @@ def ranking_bar(ranking: pd.DataFrame, metric: str = "phci",
             ),
         )
     )
-    fig.add_vline(x=1.0, line=dict(color="#374151", width=1, dash="dash"),
+    fig.add_vline(x=1.0, line=dict(color="#475569", width=1, dash="dash"),
                   annotation_text="Free-flow (1.0)", annotation_position="top")
     fig.update_layout(
+        template=PATNA_TEMPLATE,
         title=dict(text=f"<b>{title}</b>", x=0.0, xanchor="left"),
         xaxis_title=metric.upper(),
         yaxis_title="",
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=280, r=80, t=60, b=40),
-        height=max(420, 22 * len(df) + 100),
+        height=min(720, max(420, 22 * len(df) + 100)),
     )
     return fig
 
@@ -222,15 +270,16 @@ def direction_asymmetry_chart(asymmetry: pd.DataFrame, peak_label: str) -> go.Fi
         name="B → A", marker=dict(color="#dc2626"),
         hovertemplate="%{y}<br>B→A median CR: %{x:.3f}<extra></extra>",
     ))
-    fig.add_vline(x=1.0, line=dict(color="#374151", width=1, dash="dash"))
+    fig.add_vline(x=1.0, line=dict(color="#475569", width=1, dash="dash"))
     fig.update_layout(
+        template=PATNA_TEMPLATE,
         barmode="group",
         title=dict(text=f"<b>Direction asymmetry — {peak_label}</b>",
                    x=0.0, xanchor="left"),
         xaxis_title="Median Congestion Ratio",
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=260, r=40, t=60, b=40),
-        height=max(420, 22 * len(sub) + 100),
+        height=min(720, max(420, 22 * len(sub) + 100)),
         legend=dict(orientation="h", y=-0.05),
     )
     return fig
@@ -272,11 +321,12 @@ def reliability_chart(bti_df: pd.DataFrame, metric: str = "bti") -> go.Figure:
     ))
     label_text = "Buffer Time Index (FHWA)" if metric == "bti" else "Coefficient of Variation"
     fig.update_layout(
+        template=PATNA_TEMPLATE,
         title=dict(text=f"<b>{label_text} — peak window</b>", x=0.0, xanchor="left"),
         xaxis_title=metric.upper(),
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=320, r=200, t=60, b=40),
-        height=max(420, 18 * len(df) + 100),
+        height=min(800, max(420, 18 * len(df) + 100)),
     )
     return fig
 
@@ -302,13 +352,14 @@ def coverage_heatmap(coverage: pd.DataFrame) -> go.Figure:
         colorbar=dict(title="n obs/day"),
     ))
     fig.update_layout(
+        template=PATNA_TEMPLATE,
         title=dict(text="<b>Observation Coverage — corridor × date</b>",
                    x=0.0, xanchor="left"),
         xaxis_title="Date",
         yaxis_title="Corridor ID",
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=80, r=40, t=60, b=40),
-        height=max(420, 16 * len(pivot) + 100),
+        height=min(720, max(420, 16 * len(pivot) + 100)),
     )
     return fig
 
@@ -320,10 +371,11 @@ def cr_cdf_chart(cr_values: pd.Series) -> go.Figure:
         return _empty_figure("No CR observations.")
     y = (s.rank(method="first") / len(s)).values
     fig = go.Figure(go.Scatter(x=s.values, y=y, mode="lines",
-                               line=dict(color="#1f2937", width=2)))
-    fig.add_vline(x=1.0, line=dict(color="#dc2626", width=1, dash="dash"),
+                               line=dict(color="#4F46E5", width=2)))
+    fig.add_vline(x=1.0, line=dict(color="#EF4444", width=1, dash="dash"),
                   annotation_text="Free-flow (1.0)", annotation_position="top right")
     fig.update_layout(
+        template=PATNA_TEMPLATE,
         title=dict(text="<b>Empirical CDF of Congestion Ratio</b>", x=0.0, xanchor="left"),
         xaxis_title="Congestion Ratio",
         yaxis_title="Cumulative share of observations",
@@ -332,3 +384,205 @@ def cr_cdf_chart(cr_values: pd.Series) -> go.Figure:
         height=380,
     )
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Executive-summary helpers: a compact ranking bar, a network-hourly line,
+# and a small pydeck mini-map of the worst N corridors.
+# ---------------------------------------------------------------------------
+
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+POLYLINES_FILE = PROJECT_DIR / "corridor_polylines.json"
+
+
+def compact_ranking_bar(ranking: pd.DataFrame, top_n: int = 6) -> go.Figure:
+    """A short, executive-summary version of `ranking_bar` — top N corridors only."""
+    if ranking.empty:
+        return _empty_figure("Awaiting data.")
+    top = ranking.head(top_n).copy()
+    fig = ranking_bar(top, metric="phci", title=f"Top {len(top)} corridors by PHCI")
+    fig.update_layout(height=320, margin=dict(l=240, r=60, t=50, b=30))
+    return fig
+
+
+def network_hourly_line(df: pd.DataFrame) -> go.Figure:
+    """Network-wide median Congestion Ratio by hour of day, weekday vs weekend."""
+    if df.empty:
+        return _empty_figure("No observations yet.")
+    sub = df[df["hour"].astype(int).between(6, 22)].copy()
+    sub["hour_int"] = sub["hour"].astype(int)
+    grouped = (
+        sub.groupby(["weekday_or_weekend", "hour_int"])
+        .agg(median_cr=("congestion_ratio", "median"),
+             n=("congestion_ratio", "size"))
+        .reset_index()
+    )
+    fig = go.Figure()
+    palette = {"Weekday": "#4F46E5", "Weekend": "#F59E0B"}
+    for label in ("Weekday", "Weekend"):
+        s = grouped[grouped["weekday_or_weekend"] == label].sort_values("hour_int")
+        if s.empty:
+            continue
+        fig.add_trace(go.Scatter(
+            x=s["hour_int"],
+            y=s["median_cr"],
+            mode="lines+markers",
+            name=label,
+            line=dict(color=palette[label], width=2.5),
+            marker=dict(size=6, color=palette[label]),
+            hovertemplate=f"{label}<br>%{{x}}:00 — CR %{{y:.2f}}<extra></extra>",
+        ))
+    fig.add_hline(y=1.0, line=dict(color="#94A3B8", width=1, dash="dash"),
+                  annotation_text="Free-flow", annotation_position="bottom right",
+                  annotation_font_color="#64748B")
+    for hr in (8, 11, 17, 20):
+        fig.add_vline(x=hr, line=dict(color="#CBD5E1", width=1, dash="dot"))
+    fig.update_layout(
+        template=PATNA_TEMPLATE,
+        title=dict(text="<b>When is congestion worst? — network median by hour</b>",
+                   x=0.0, xanchor="left"),
+        xaxis_title="Hour of day (IST)",
+        yaxis_title="Median Congestion Ratio",
+        xaxis=dict(tickmode="linear", tick0=6, dtick=2),
+        height=320,
+        margin=dict(l=60, r=30, t=50, b=40),
+        legend=dict(orientation="h", y=1.08, x=1, xanchor="right"),
+    )
+    return fig
+
+
+def _phci_to_rgb(v: float) -> list[int]:
+    """Map a PHCI value to an RGB triplet on the same scale as the heatmap.
+
+    Single source of truth for corridor-line color across the full map (page 5)
+    and the executive-summary mini-map.
+    """
+    if pd.isna(v):
+        return [156, 163, 175]
+    if v < 1.0:
+        return [59, 130, 246]
+    if v < 1.25:
+        return [252, 211, 77]
+    if v < 1.5:
+        return [249, 115, 22]
+    if v < 2.0:
+        return [220, 38, 38]
+    return [127, 29, 29]
+
+
+def _load_polylines() -> dict:
+    if not POLYLINES_FILE.exists():
+        return {}
+    try:
+        return json.loads(POLYLINES_FILE.read_text())
+    except json.JSONDecodeError:
+        return {}
+
+
+def build_corridor_geometry(df: pd.DataFrame, ranking: pd.DataFrame) -> pd.DataFrame:
+    """Build the per-corridor geometry frame used by both the full map and the mini-map.
+
+    Joins corridor endpoints + ranking metrics, attaches OSRM polyline coords if
+    available (else straight-line fallback), and adds rendering columns.
+    """
+    polylines = _load_polylines()
+    geom = (
+        df[["corridor_id", "corridor_name", "origin_lat", "origin_lng",
+            "dest_lat", "dest_lng", "est_distance_km"]]
+        .drop_duplicates(subset=["corridor_id"])
+        .reset_index(drop=True)
+    )
+    cols = ["corridor_id", "phci", "adci", "bti", "phci_hour"]
+    cols = [c for c in cols if c in ranking.columns] or ["corridor_id"]
+    display = geom.merge(ranking[cols], on="corridor_id", how="left")
+    if "phci" in display.columns:
+        display["phci"] = display["phci"].fillna(1.0)
+    else:
+        display["phci"] = 1.0
+    if "rank" in ranking.columns:
+        display = display.merge(ranking[["corridor_id", "rank"]], on="corridor_id", how="left")
+    else:
+        display["rank"] = pd.Series(range(1, len(display) + 1))
+
+    def _coords(row):
+        key = f"{row['corridor_id']}__A_to_B"
+        entry = polylines.get(key)
+        if entry and entry.get("coords"):
+            return entry["coords"]
+        return [[row["origin_lng"], row["origin_lat"]],
+                [row["dest_lng"], row["dest_lat"]]]
+
+    display["coords"] = display.apply(_coords, axis=1)
+    display["color_rgb"] = display["phci"].apply(_phci_to_rgb)
+    display["color_r"] = display["color_rgb"].apply(lambda c: c[0])
+    display["color_g"] = display["color_rgb"].apply(lambda c: c[1])
+    display["color_b"] = display["color_rgb"].apply(lambda c: c[2])
+    display["phci_label"] = display["phci"].round(3).astype(str)
+    display["n_path_points"] = display["coords"].apply(len)
+    return display
+
+
+def mini_map(display: pd.DataFrame, top_n: int = 5) -> pdk.Deck:
+    """Compact pydeck map showing the top N worst corridors with subtle context.
+
+    All 28 corridors are drawn faintly so the geographic context is preserved;
+    the top N are emphasised with full opacity and thicker lines.
+    """
+    if display.empty:
+        return pdk.Deck(layers=[], initial_view_state=pdk.ViewState(
+            longitude=85.13, latitude=25.605, zoom=11.2,
+        ))
+    df = display.copy()
+    df["is_top"] = df["rank"] <= top_n
+    df["line_alpha"] = df["is_top"].map({True: 230, False: 70}).astype(int)
+    df["line_width"] = df["is_top"].map({True: 7, False: 3}).astype(int)
+
+    path_layer = pdk.Layer(
+        "PathLayer",
+        data=df,
+        get_path="coords",
+        get_color=["color_r", "color_g", "color_b", "line_alpha"],
+        get_width="line_width",
+        width_min_pixels=2,
+        width_max_pixels=10,
+        pickable=True,
+        cap_rounded=True,
+        joint_rounded=True,
+    )
+    label_df = df[df["is_top"]].copy()
+    label_df["label_text"] = label_df.apply(
+        lambda r: f"{int(r['rank'])}. {r['corridor_name'][:28]}", axis=1
+    )
+    label_df["mid_lng"] = label_df["coords"].apply(
+        lambda c: c[len(c) // 2][0] if c else 0
+    )
+    label_df["mid_lat"] = label_df["coords"].apply(
+        lambda c: c[len(c) // 2][1] if c else 0
+    )
+    label_layer = pdk.Layer(
+        "TextLayer",
+        data=label_df,
+        get_position=["mid_lng", "mid_lat"],
+        get_text="label_text",
+        get_size=12,
+        get_color=[15, 23, 42, 230],
+        get_alignment_baseline="'center'",
+        background=True,
+        get_background_color=[255, 255, 255, 200],
+        get_border_color=[226, 232, 240, 255],
+        get_border_width=1,
+    )
+    tooltip = {
+        "html": "<b>★ Rank {rank} — {corridor_name}</b><br/>PHCI: {phci_label}",
+        "style": {"backgroundColor": "white", "color": "#0F172A",
+                  "fontSize": "12px", "padding": "8px",
+                  "border": "1px solid #E2E8F0", "borderRadius": "6px"},
+    }
+    return pdk.Deck(
+        layers=[path_layer, label_layer],
+        initial_view_state=pdk.ViewState(
+            longitude=85.13, latitude=25.605, zoom=11.2, pitch=0, bearing=0,
+        ),
+        map_style="light",
+        tooltip=tooltip,
+    )

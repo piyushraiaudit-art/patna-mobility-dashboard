@@ -297,6 +297,53 @@ def ranking_table(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def build_gating_status(df: pd.DataFrame, ranking: pd.DataFrame) -> list[tuple[str, str, str]]:
+    """Return (label, state, detail) tuples for the global feature-gating strip.
+
+    Used by the sidebar status pills and by the Executive Summary footer to give
+    one consistent picture of which metrics are Locked / Preliminary / Stable.
+    """
+    out: list[tuple[str, str, str]] = []
+
+    if ranking.empty:
+        out.append(("Ranking", "Locked", "Awaiting first batches"))
+    else:
+        min_n_peak = int(ranking["n_peak"].min())
+        state = gating_state(min_n_peak, "phci_weekday")
+        out.append(("Weekday PHCI", state,
+                    f"min n={min_n_peak} per corridor; need ≥ {GATING['phci_weekday'].stable_n} for Stable"))
+
+    wkend = weekend_observations(df)
+    wkend_days = wkend["date"].nunique() if not wkend.empty else 0
+    if wkend_days == 0:
+        out.append(("Weekend heatmap", "Locked", "First Saturday: 2026-05-16"))
+    elif wkend_days == 1:
+        out.append(("Weekend heatmap", "Preliminary", "1 weekend day in; second on 17 May"))
+    else:
+        out.append(("Weekend heatmap", "Stable", f"{wkend_days} weekend days"))
+
+    wk_peak = peak_observations(weekday_observations(df))
+    if wk_peak.empty:
+        out.append(("BTI / Reliability", "Locked", "Awaiting peak-window observations"))
+    else:
+        per_corridor = wk_peak.groupby("corridor_id").size()
+        min_n = int(per_corridor.min())
+        state = gating_state(min_n, "bti")
+        out.append(("BTI / Reliability", state,
+                    f"min n={min_n}; need ≥ {GATING['bti'].stable_n} for Stable"))
+
+    if not wk_peak.empty:
+        am = wk_peak[wk_peak["hour"].astype(int).isin([8, 9, 10])]
+        n_am = int(am.groupby(["corridor_id", "direction"]).size().min()) if not am.empty else 0
+        state = gating_state(n_am, "direction_asymmetry")
+        out.append(("Direction asymmetry", state,
+                    f"min n={n_am} per direction in AM peak"))
+    else:
+        out.append(("Direction asymmetry", "Locked", "Awaiting peak-window data"))
+
+    return out
+
+
 def minutes_lost_table(df: pd.DataFrame) -> pd.DataFrame:
     """Secondary ranking by absolute minutes lost in peak (cross-context for short corridors)."""
     wk_peak = peak_observations(weekday_observations(df))
