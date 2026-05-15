@@ -26,8 +26,21 @@ from viz import (
 from insights import top_findings_html
 from ui import (
     KPI, apply_page_chrome, audit_context_caption, callout, kpi_row, page_header,
-    top_rank_list,
 )
+try:
+    from ui import top_rank_list
+except ImportError:
+    # Defensive: if the deployed ui.py is from a partial cache, fall back to a
+    # plain dataframe so the page still renders the rank info.
+    def top_rank_list(ranking, top_n=5, title="Top corridors", footer=""):
+        st.markdown(f"**{title}**")
+        if ranking is not None and len(ranking) > 0:
+            st.dataframe(
+                ranking.head(top_n)[["rank", "corridor_name", "phci"]],
+                use_container_width=True, hide_index=True,
+            )
+        if footer:
+            st.caption(footer)
 
 
 st.set_page_config(

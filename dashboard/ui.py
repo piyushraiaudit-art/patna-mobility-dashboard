@@ -14,6 +14,23 @@ from typing import Iterable
 
 import streamlit as st
 
+__all__ = [
+    "KPI",
+    "ACCENT_COLORS",
+    "apply_page_chrome",
+    "audit_context_caption",
+    "callout",
+    "heatmap_color_legend",
+    "inject_global_css",
+    "kpi_row",
+    "page_header",
+    "render_sidebar",
+    "sidebar_freshness_footer",
+    "sidebar_glossary_expander",
+    "sidebar_status_pills",
+    "top_rank_list",
+]
+
 
 # ---------------------------------------------------------------------------
 # Global CSS — injected once per page render. Streamlit re-runs the script
