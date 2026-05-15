@@ -142,9 +142,9 @@ callout(findings_html, kind="insight",
 # ---------------------------------------------------------------------------
 st.markdown("### Where the worst congestion is happening")
 st.caption(
-    "Numbered badges on the map match the ranked list on the right. "
-    "Top 5 corridors are drawn in full colour and weight; the remaining "
-    "23 are faded for geographic context."
+    "On the map, the boldest, most-saturated lines are the worst — line thickness "
+    "decreases from rank 1 to 5. The 23 remaining corridors are faded for "
+    "geographic context. Hover any line for the corridor name and PHCI."
 )
 geom = build_corridor_geometry(df, ranking)
 map_col, list_col = st.columns([2, 1], gap="medium")
@@ -153,7 +153,8 @@ with map_col:
 with list_col:
     top_rank_list(
         ranking, top_n=5, title="Top 5 worst corridors",
-        footer="Badge colour = PHCI severity band. Hover any line on the map for full statistics.",
+        footer="Badge colour matches the line colour on the map. "
+               "Hover any line for full statistics.",
     )
 
 # ---------------------------------------------------------------------------

@@ -540,8 +540,12 @@ def mini_map(display: pd.DataFrame, top_n: int = 5,
         ))
     df = display.copy()
     df["is_top"] = df["rank"] <= top_n
-    df["line_alpha"] = df["is_top"].map({True: 240, False: 55}).astype(int)
-    df["line_width"] = df["is_top"].map({True: 8, False: 3}).astype(int)
+    # Rank-graded width: rank 1 thickest, descending. Faded grey for the rest.
+    df["line_alpha"] = df["is_top"].map({True: 245, False: 50}).astype(int)
+    df["line_width"] = df.apply(
+        lambda r: max(11 - int(r["rank"]), 6) if r["is_top"] else 2.5,
+        axis=1,
+    )
 
     path_layer = pdk.Layer(
         "PathLayer",
@@ -550,27 +554,25 @@ def mini_map(display: pd.DataFrame, top_n: int = 5,
         get_color=["color_r", "color_g", "color_b", "line_alpha"],
         get_width="line_width",
         width_min_pixels=2,
-        width_max_pixels=11,
+        width_max_pixels=14,
         pickable=True,
         cap_rounded=True,
         joint_rounded=True,
     )
 
-    # Small rank badge ("1", "2", …) at the midpoint of each top-N corridor.
-    # Tighter and far less visually noisy than full corridor names.
-    label_df = df[df["is_top"]].copy()
-    label_df["badge_text"] = label_df["rank"].astype(int).astype(str)
-    label_df["mid_lng"] = label_df["coords"].apply(
-        lambda c: c[len(c) // 2][0] if c else 0
-    )
-    label_df["mid_lat"] = label_df["coords"].apply(
-        lambda c: c[len(c) // 2][1] if c else 0
-    )
-
     layers = [path_layer]
+    # Only opt-in legacy mode draws text on the map. Default keeps the canvas
+    # clean — the ranked list beside the map carries the labels.
     if show_labels:
+        label_df = df[df["is_top"]].copy()
         label_df["label_text"] = label_df.apply(
             lambda r: f"{int(r['rank'])}. {r['corridor_name'][:28]}", axis=1
+        )
+        label_df["mid_lng"] = label_df["coords"].apply(
+            lambda c: c[len(c) // 2][0] if c else 0
+        )
+        label_df["mid_lat"] = label_df["coords"].apply(
+            lambda c: c[len(c) // 2][1] if c else 0
         )
         layers.append(pdk.Layer(
             "TextLayer",
@@ -584,20 +586,6 @@ def mini_map(display: pd.DataFrame, top_n: int = 5,
             get_background_color=[255, 255, 255, 220],
             get_border_color=[226, 232, 240, 255],
             get_border_width=1,
-        ))
-    else:
-        layers.append(pdk.Layer(
-            "TextLayer",
-            data=label_df,
-            get_position=["mid_lng", "mid_lat"],
-            get_text="badge_text",
-            get_size=15,
-            get_color=[255, 255, 255, 255],
-            get_alignment_baseline="'center'",
-            background=True,
-            get_background_color=["color_r", "color_g", "color_b", 240],
-            get_border_color=[255, 255, 255, 255],
-            get_border_width=2,
         ))
 
     tooltip = {
