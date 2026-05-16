@@ -128,8 +128,9 @@ st.divider()
 st.header("2. Observation Coverage")
 st.markdown(
     "Every cell counts the OK observations collected for a given corridor on a "
-    "given date. Full coverage is **48 batches/day × 1 corridor = 48** (cron every "
-    "30 minutes; one row per corridor per batch). Red < 30, amber 30–44, green ≥ 45."
+    "given date, summed across both directions. Full coverage is **48 batches/day "
+    "× 2 directions = 96** (cron every 30 minutes; one row per corridor-direction "
+    "per batch). Red ≲ 50, amber 50–80, green ≳ 90."
 )
 st.plotly_chart(coverage_heatmap(rep["coverage"]), use_container_width=True)
 
@@ -140,23 +141,23 @@ st.divider()
 # ---------------------------------------------------------------------------
 st.header("3. Failed API calls — transparency log")
 st.markdown(
-    f"**{stats.fail_count}** failed Routes API calls in the cumulative log "
-    f"({stats.fail_pct:.2f}% of total). All failures are surfaced here so reviewers "
+    f"**{stats.fail_count}** failed Routes API calls in the audit window "
+    f"({stats.fail_pct:.2f}% of all calls). All failures are surfaced here so reviewers "
     "can confirm no observation is silently hidden. The OK-only filter on every "
     "other page excludes these rows."
+)
+st.caption(
+    "Note: 56 calls failed during a one-off manual test at 2026-05-12 20:47 IST "
+    "— before the audit window opened — with the error `Timestamp must be set to "
+    "a future time`. The bug (`datetime.now()` evaluated client-side instead of "
+    "with a small future offset) was fixed in `collect_travel_times.py` before "
+    "cron started. Those rows are excluded from every dashboard surface because "
+    "they pre-date the audit window."
 )
 
 if stats.fail_count > 0:
     st.subheader("Failure summary")
     st.dataframe(rep["fail_summary"], use_container_width=True, hide_index=True)
-
-    st.markdown(
-        ":information_source: **Known cause for the 56 fails on 2026-05-12 20:47:** "
-        "the first manual test run used `datetime.now()` as `departureTime`, which "
-        "Google rejects when the time is in the past at the moment the request "
-        "reaches the server. Fixed in `collect_travel_times.py` before the cron "
-        "schedule started. No further failures from this cause are expected."
-    )
 
     with st.expander("Raw FAIL rows"):
         fail_display = rep["fail_log"][[
@@ -165,7 +166,7 @@ if stats.fail_count > 0:
         ]]
         st.dataframe(fail_display, use_container_width=True, hide_index=True)
 else:
-    st.success("No failed API calls in the cumulative log.")
+    st.success("No failed API calls inside the audit window.")
 
 st.divider()
 

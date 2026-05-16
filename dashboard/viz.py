@@ -190,10 +190,21 @@ def hourly_heatmap(
         title=dict(text=f"<b>{title}</b><br><span style='font-size:11px;color:#64748B'>{subtitle}</span>",
                    x=0.0, xanchor="left"),
         xaxis_title="Hour of day (IST)",
-        yaxis=dict(autorange="reversed"),  # worst at top
+        # worst at top, and force every corridor name to render — without
+        # tickmode=array Plotly auto-thins ticks when the chart is dense.
+        yaxis=dict(
+            autorange="reversed",
+            tickmode="array",
+            tickvals=y_labels,
+            ticktext=y_labels,
+            tickfont=dict(size=11),
+            automargin=True,
+        ),
         plot_bgcolor="white", paper_bgcolor="white",
-        margin=dict(l=240, r=40, t=80, b=40),
-        height=min(720, max(420, 22 * len(corridor_order) + 120)),
+        margin=dict(l=260, r=40, t=80, b=40),
+        # No height cap. 22px per corridor row keeps the heatmap cells square
+        # enough to be readable on the 17-hour x-axis.
+        height=max(420, 22 * len(corridor_order) + 140),
     )
     return fig
 
@@ -245,8 +256,17 @@ def ranking_bar(ranking: pd.DataFrame, metric: str = "phci",
         xaxis_title=metric.upper(),
         yaxis_title="",
         plot_bgcolor="white", paper_bgcolor="white",
-        margin=dict(l=280, r=80, t=60, b=40),
-        height=min(720, max(420, 22 * len(df) + 100)),
+        margin=dict(l=300, r=80, t=60, b=40),
+        # No height cap — Plotly silently thins y-tick labels when bars exceed
+        # the available height. 22px per row gives every label room to render.
+        height=max(420, 22 * len(df) + 120),
+        yaxis=dict(
+            tickmode="array",
+            tickvals=labels,
+            ticktext=labels,
+            tickfont=dict(size=11),
+            automargin=True,
+        ),
     )
     return fig
 
@@ -278,8 +298,17 @@ def direction_asymmetry_chart(asymmetry: pd.DataFrame, peak_label: str) -> go.Fi
                    x=0.0, xanchor="left"),
         xaxis_title="Median Congestion Ratio",
         plot_bgcolor="white", paper_bgcolor="white",
-        margin=dict(l=260, r=40, t=60, b=40),
-        height=min(720, max(420, 22 * len(sub) + 100)),
+        margin=dict(l=280, r=40, t=60, b=40),
+        # No height cap — see reliability_chart for rationale. With grouped
+        # bars each corridor needs ~26px to keep both bars readable.
+        height=max(420, 26 * len(sub) + 120),
+        yaxis=dict(
+            tickmode="array",
+            tickvals=labels,
+            ticktext=labels,
+            tickfont=dict(size=11),
+            automargin=True,
+        ),
         legend=dict(orientation="h", y=-0.05),
     )
     return fig
@@ -294,7 +323,8 @@ def reliability_chart(bti_df: pd.DataFrame, metric: str = "bti") -> go.Figure:
         return _empty_figure("Awaiting data.")
     df = bti_df.copy().dropna(subset=[metric])
     df = df.sort_values(metric, ascending=True)
-    labels = [f"{r.corridor_id} ({r.direction[0]}{r.direction[-1]}) — {r.corridor_name[:40]}"
+    _DIR = {"A_to_B": "A→B", "B_to_A": "B→A"}
+    labels = [f"{r.corridor_id} ({_DIR.get(r.direction, r.direction)}) — {r.corridor_name[:40]}"
               for r in df.itertuples()]
 
     def english_label(v: float) -> str:
@@ -311,10 +341,11 @@ def reliability_chart(bti_df: pd.DataFrame, metric: str = "bti") -> go.Figure:
 
     text = [f"{v:.2f} — {english_label(v)}" for v in df[metric]]
 
+    cmax_val = max(0.5, float(df[metric].fillna(0).max() or 0.0))
     fig = go.Figure(go.Bar(
         x=df[metric], y=labels, orientation="h",
         marker=dict(color=df[metric], colorscale="Reds",
-                    cmin=0, cmax=max(0.5, df[metric].max() or 0.5),
+                    cmin=0, cmax=cmax_val,
                     showscale=False),
         text=text, textposition="outside",
         hovertemplate="%{y}<br>" + metric.upper() + ": %{x:.3f}<extra></extra>",
@@ -325,8 +356,19 @@ def reliability_chart(bti_df: pd.DataFrame, metric: str = "bti") -> go.Figure:
         title=dict(text=f"<b>{label_text} — peak window</b>", x=0.0, xanchor="left"),
         xaxis_title=metric.upper(),
         plot_bgcolor="white", paper_bgcolor="white",
-        margin=dict(l=320, r=200, t=60, b=40),
-        height=min(800, max(420, 18 * len(df) + 100)),
+        margin=dict(l=340, r=200, t=60, b=40),
+        # No height cap: with 56 corridor-direction rows Plotly will otherwise
+        # auto-thin the y-tick labels and silently hide every other corridor
+        # name. 22px per row + an explicit tickmode guarantees every label
+        # renders.
+        height=max(420, 22 * len(df) + 120),
+        yaxis=dict(
+            tickmode="array",
+            tickvals=labels,
+            ticktext=labels,
+            tickfont=dict(size=11),
+            automargin=True,
+        ),
     )
     return fig
 
@@ -345,7 +387,10 @@ def coverage_heatmap(coverage: pd.DataFrame) -> go.Figure:
             [0.5, "#fcd34d"],
             [1.0, "#16a34a"],
         ],
-        zmin=0, zmax=48,
+        # Full day = 48 batches × 2 directions = 96 observations per
+        # (corridor, date) cell. Earlier zmax=48 was wrong and saturated every
+        # complete day at the top of the ramp.
+        zmin=0, zmax=96,
         text=pivot.values.astype(int),
         texttemplate="%{text}",
         textfont=dict(size=10),

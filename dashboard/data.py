@@ -113,6 +113,15 @@ def load_observations() -> pd.DataFrame:
     df["timestamp_ist"] = pd.to_datetime(df["timestamp_ist"])
     df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
 
+    # Restrict to the audit window. The collector emits a one-shot bootstrap
+    # batch on 2026-05-12 (one day before the window opens) and may continue
+    # past 2026-05-20 if cron isn't stopped; neither belongs in the published
+    # numbers. Keeping these would pollute PHCI/ADCI hour-20 medians and would
+    # contradict the audit-window dates printed on every page header.
+    window_start = AUDIT_WINDOW_START.date().isoformat()
+    window_end = AUDIT_WINDOW_END.date().isoformat()
+    df = df[df["date"].between(window_start, window_end)].copy()
+
     df["weekday_or_weekend"] = df["is_weekend"].map({"Y": "Weekend", "N": "Weekday"})
     df["peak_label"] = df["hour"].astype(int).map(_classify_peak)
 
@@ -141,12 +150,22 @@ def load_observations() -> pd.DataFrame:
 
 
 def load_fail_rows() -> pd.DataFrame:
-    """The FAIL rows, separately, for the Methodology page's transparency log."""
+    """The FAIL rows, separately, for the Methodology page's transparency log.
+
+    Restricted to the audit window — the bootstrap 2026-05-12 FAILs from the
+    one-shot 'Timestamp must be future' bug are excluded because they
+    pre-date the audit and are not part of the published evidence base.
+    """
     raw = _read_all_logs()
     raw = raw.drop_duplicates(
         subset=["timestamp_ist", "corridor_id", "direction"], keep="last"
     )
-    return raw[raw["api_status"] == "FAIL"].copy().reset_index(drop=True)
+    fails = raw[raw["api_status"] == "FAIL"].copy()
+    fails["date"] = pd.to_datetime(fails["date"]).dt.date.astype(str)
+    window_start = AUDIT_WINDOW_START.date().isoformat()
+    window_end = AUDIT_WINDOW_END.date().isoformat()
+    fails = fails[fails["date"].between(window_start, window_end)]
+    return fails.reset_index(drop=True)
 
 
 @dataclass(frozen=True)

@@ -45,18 +45,19 @@ page_header(
 # ---------------------------------------------------------------------------
 st.header("What this dashboard is")
 st.markdown(
-    """
+    f"""
 This is a measurement tool for the **Patna Urban Mobility Audit** being conducted
 by the **Comptroller and Auditor General of India (CAG)**. It does one job: for
 28 important roads of Patna, it asks Google Maps every 30 minutes how long the
 drive currently takes, compares that to how long the drive *would* take with
 zero traffic, and stores the answer.
 
-After 8 days, we have ~21,500 measurements. From those, the dashboard produces
-ranked lists, heatmaps, and a map that show **which roads of Patna are
-congested, when, and by how much** — replacing "Bailey Road feels congested"
-with "Bailey Road takes 11 minutes at 6 AM and 36 minutes at 6:30 PM, every
-weekday."
+So far we have **{stats.total_observations:,} measurements across
+{stats.days_covered} day(s)** in the 8-day audit window. From these, the
+dashboard produces ranked lists, heatmaps, and a map that show **which roads of
+Patna are congested, when, and by how much** — replacing "Bailey Road feels
+congested" with "Bailey Road takes 11 minutes at 6 AM and 36 minutes at
+6:30 PM, every weekday."
     """
 )
 

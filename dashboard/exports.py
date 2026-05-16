@@ -200,9 +200,10 @@ def build_excel_annexure(df: pd.DataFrame, rep: dict) -> bytes:
         cov_ws.conditional_formatting.add(
             range_str,
             ColorScaleRule(
+                # Per-cell scale: 48 batches/day × 2 directions = 96 obs at full coverage.
                 start_type="num", start_value=0, start_color="DC2626",
-                mid_type="num", mid_value=30, mid_color="FCD34D",
-                end_type="num", end_value=48, end_color="16A34A",
+                mid_type="num", mid_value=60, mid_color="FCD34D",
+                end_type="num", end_value=96, end_color="16A34A",
             ),
         )
 

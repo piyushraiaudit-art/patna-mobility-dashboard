@@ -70,10 +70,17 @@ def top_findings(
         )
 
     # 2) Largest absolute delay (cross-checks short-vs-long corridors)
-    if minutes_lost is None or minutes_lost.empty:
+    # Only corridors that actually lose time qualify — minutes_lost can go
+    # slightly negative when reroutes shorten the path during congestion.
+    positive_ml = (
+        minutes_lost[minutes_lost["minutes_lost"] > 0]
+        if minutes_lost is not None and not minutes_lost.empty
+        else None
+    )
+    if positive_ml is None or positive_ml.empty:
         out.append("Absolute-delay finding will unlock once peak-window data accumulates.")
     else:
-        m = minutes_lost.iloc[0]
+        m = positive_ml.iloc[0]
         out.append(
             f"{_bold(str(m['corridor_name']))} loses <b>{float(m['minutes_lost']):.1f} minutes "
             f"per peak trip</b> ({float(m['median_traffic_min']):.1f} min vs. "

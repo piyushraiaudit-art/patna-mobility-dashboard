@@ -25,7 +25,7 @@ import pandas as pd
 AM_PEAK_HOURS = (8, 9, 10)
 PM_PEAK_HOURS = (17, 18, 19)
 PEAK_HOURS = AM_PEAK_HOURS + PM_PEAK_HOURS
-ACTIVE_HOURS = tuple(range(6, 22))  # 06:00-21:59 inclusive for ADCI
+ACTIVE_HOURS = tuple(range(6, 23))  # 06:00-22:59 IST; matches latex h ∈ [6, 22] and the hourly-heatmap default.
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ def phci(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def adci(df: pd.DataFrame) -> pd.DataFrame:
-    """All-Day Congestion Index — mean over active hours (06-21) of the hourly median CR."""
+    """All-Day Congestion Index — mean over active hours (06-22 IST) of the hourly median CR."""
     wk = weekday_observations(df)
     active = wk[wk["hour"].astype(int).isin(ACTIVE_HOURS)]
     if active.empty:
@@ -273,18 +273,18 @@ def ranking_table(df: pd.DataFrame) -> pd.DataFrame:
     """The headline ranking table used on page 1 and the Excel Ranking sheet."""
     p = phci(df)
     a = adci(df)[["corridor_id", "adci", "n_active"]]
-    b = (
-        bti(df)
-        .groupby("corridor_id")
-        .agg(bti=("bti", "max"), n_bti=("n", "sum"))
-        .reset_index()
-    )
-    c = (
-        cv(df)
-        .groupby("corridor_id")
-        .agg(cv=("cv", "max"), n_cv=("n", "sum"))
-        .reset_index()
-    )
+
+    # For BTI / CV we surface the worst-direction value per corridor. Earlier
+    # this paired the max with sum(n) across both directions, which made the
+    # exposed sample size look twice as large as the value it supports. Pick
+    # the row that owns the max and report its n directly.
+    bti_per_corr = bti(df)
+    b_idx = bti_per_corr.groupby("corridor_id")["bti"].idxmax()
+    b = bti_per_corr.loc[b_idx, ["corridor_id", "bti", "n"]].rename(columns={"n": "n_bti"})
+
+    cv_per_corr = cv(df)
+    c_idx = cv_per_corr.groupby("corridor_id")["cv"].idxmax()
+    c = cv_per_corr.loc[c_idx, ["corridor_id", "cv", "n"]].rename(columns={"n": "n_cv"})
 
     out = (
         p.merge(a, on="corridor_id", how="left")
@@ -316,9 +316,9 @@ def build_gating_status(df: pd.DataFrame, ranking: pd.DataFrame) -> list[tuple[s
     wkend = weekend_observations(df)
     wkend_days = wkend["date"].nunique() if not wkend.empty else 0
     if wkend_days == 0:
-        out.append(("Weekend heatmap", "Locked", "First Saturday: 2026-05-16"))
+        out.append(("Weekend heatmap", "Locked", "Awaiting first weekend day in window"))
     elif wkend_days == 1:
-        out.append(("Weekend heatmap", "Preliminary", "1 weekend day in; second on 17 May"))
+        out.append(("Weekend heatmap", "Preliminary", "1 weekend day in; second arrives next weekend day"))
     else:
         out.append(("Weekend heatmap", "Stable", f"{wkend_days} weekend days"))
 

@@ -424,7 +424,9 @@ def top_rank_list(ranking, top_n: int = 5, title: str = "Top corridors",
             except (TypeError, ValueError):
                 pass
         if "phci_direction" in r and r["phci_direction"]:
-            meta_bits.append(str(r["phci_direction"]))
+            dir_pretty = {"A_to_B": "A→B", "B_to_A": "B→A"}.get(
+                str(r["phci_direction"]), str(r["phci_direction"]))
+            meta_bits.append(dir_pretty)
         meta = " · ".join(meta_bits) or "&nbsp;"
         rows_html.append(
             f'<div class="patna-ranklist-row">'

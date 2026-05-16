@@ -65,25 +65,25 @@ kpi_row([
     KPI(
         label="Worst PHCI",
         value=f"{float(worst_phci['phci']):.2f}",
-        sublabel=str(worst_phci["corridor_name"])[:30],
+        sublabel=str(worst_phci["corridor_name"]),
         accent="rose",
     ),
     KPI(
         label="Worst all-day (ADCI)",
         value=f"{float(worst_adci['adci']):.2f}",
-        sublabel=str(worst_adci["corridor_name"])[:30],
+        sublabel=str(worst_adci["corridor_name"]),
         accent="amber",
     ),
     KPI(
         label="Most unreliable",
         value=(f"BTI {float(worst_bti['bti']):.2f}" if worst_bti is not None else "—"),
-        sublabel=(str(worst_bti["corridor_name"])[:30] if worst_bti is not None else "Locked"),
+        sublabel=(str(worst_bti["corridor_name"]) if worst_bti is not None else "Locked"),
         accent="violet",
     ),
     KPI(
         label="Longest peak delay",
         value=(f"{float(longest_delay['minutes_lost']):.1f} min" if longest_delay is not None else "—"),
-        sublabel=(str(longest_delay["corridor_name"])[:30] if longest_delay is not None else "—"),
+        sublabel=(str(longest_delay["corridor_name"]) if longest_delay is not None else "—"),
         accent="cyan",
     ),
 ])

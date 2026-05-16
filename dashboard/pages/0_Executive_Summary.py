@@ -100,17 +100,17 @@ most_unreliable = (
 
 kpi_row([
     KPI(
-        label="Worst corridor",
-        value=str(worst["corridor_name"])[:24] if worst is not None else "—",
-        sublabel=(f"PHCI {float(worst['phci']):.2f} · "
-                  f"{int(worst['phci_hour']):02d}:00 IST" if worst is not None else "Locked"),
+        label="Worst corridor (PHCI)",
+        value=(f"PHCI {float(worst['phci']):.2f} @ "
+               f"{int(worst['phci_hour']):02d}:00" if worst is not None else "—"),
+        sublabel=(str(worst["corridor_name"]) if worst is not None else "Locked"),
         accent="rose",
     ),
     KPI(
         label="Longest peak delay",
         value=(f"{float(longest_delay['minutes_lost']):.1f} min/trip"
                if longest_delay is not None else "—"),
-        sublabel=(str(longest_delay["corridor_name"])[:30]
+        sublabel=(str(longest_delay["corridor_name"])
                   if longest_delay is not None else "Awaiting data"),
         accent="amber",
     ),
@@ -118,7 +118,7 @@ kpi_row([
         label="Most unreliable",
         value=(f"BTI {float(most_unreliable['bti']):.2f}"
                if most_unreliable is not None else "—"),
-        sublabel=(str(most_unreliable["corridor_name"])[:30]
+        sublabel=(str(most_unreliable["corridor_name"])
                   if most_unreliable is not None else "Locked"),
         accent="violet",
     ),
