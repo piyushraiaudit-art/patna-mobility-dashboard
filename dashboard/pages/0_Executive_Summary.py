@@ -155,9 +155,10 @@ callout(findings_html, kind="insight",
 # ---------------------------------------------------------------------------
 st.markdown("### Where the worst congestion is happening")
 st.caption(
-    "On the map, the boldest, most-saturated lines are the worst — line thickness "
-    "decreases from rank 1 to 5. The 23 remaining corridors are faded for "
-    "geographic context. Hover any line for the corridor name and PHCI."
+    "The five most-congested corridors are drawn in their PHCI colour — "
+    "rank 1 is the thickest line, tapering down to rank 5. The 23 remaining "
+    "corridors are faded for geographic context. Hover any line for the "
+    "corridor name and PHCI."
 )
 geom = build_corridor_geometry(df, ranking)
 map_col, list_col = st.columns([2, 1], gap="medium")

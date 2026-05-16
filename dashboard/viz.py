@@ -599,6 +599,6 @@ def mini_map(display: pd.DataFrame, top_n: int = 5,
         initial_view_state=pdk.ViewState(
             longitude=85.13, latitude=25.605, zoom=11.2, pitch=0, bearing=0,
         ),
-        map_style="light",
+        map_style="light_no_labels",
         tooltip=tooltip,
     )
