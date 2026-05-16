@@ -210,19 +210,25 @@ def hourly_heatmap(
 
 
 def ranking_bar(ranking: pd.DataFrame, metric: str = "phci",
-                title: str = "Peak-Hour Congestion Index — 28 corridors") -> go.Figure:
+                title: str = "Peak-Hour Congestion Index — 28 corridors",
+                max_name_len: int = 55) -> go.Figure:
     """Horizontal bar chart of corridors ranked by PHCI (or any chosen metric).
 
     Bars coloured on the same scale as the heatmap so the visual language
     is consistent. Short corridors (sensitive to signal-cycle noise) are
     hatched and asterisked.
+
+    `max_name_len` controls how aggressively corridor names are truncated.
+    The full-page chart packs 28 rows and uses the default 55; the compact
+    Executive-Summary version passes a larger value since it only shows the
+    top 6 and has more vertical breathing room.
     """
     if ranking.empty:
         return _empty_figure("Awaiting data.")
 
     df = ranking.copy().sort_values(metric, ascending=True).reset_index(drop=True)
     labels = [
-        f"{r.corridor_id}. {r.corridor_name[:55]}"
+        f"{r.corridor_id}. {r.corridor_name[:max_name_len]}"
         + (" *" if r.is_short_corridor else "")
         for r in df.itertuples()
     ]
@@ -239,8 +245,10 @@ def ranking_bar(ranking: pd.DataFrame, metric: str = "phci",
                 line=dict(color="#374151", width=0.5),
                 showscale=False,
             ),
-            text=df[metric].round(3),
+            text=[f"{v:.2f}" for v in df[metric]],
             textposition="outside",
+            textfont=dict(size=12, color="#0F172A"),
+            cliponaxis=False,
             hovertemplate=(
                 "Corridor: %{y}<br>"
                 f"{metric.upper()}: %{{x:.3f}}<br>"
@@ -250,10 +258,19 @@ def ranking_bar(ranking: pd.DataFrame, metric: str = "phci",
     )
     fig.add_vline(x=1.0, line=dict(color="#475569", width=1, dash="dash"),
                   annotation_text="Free-flow (1.0)", annotation_position="top")
+
+    # Outside text labels need room past the longest bar. The default Plotly
+    # auto-range adds only ~5% padding past the max value, which clips the
+    # text for whichever bar reaches the right edge of the plot area. Force
+    # explicit headroom and also disable cliponaxis (above) as a safety net
+    # for the chart's narrow Executive-Summary layout.
+    max_val = float(df[metric].max())
+    x_upper = max(max_val * 1.18, 1.3)
+
     fig.update_layout(
         template=PATNA_TEMPLATE,
         title=dict(text=f"<b>{title}</b>", x=0.0, xanchor="left"),
-        xaxis_title=metric.upper(),
+        xaxis=dict(range=[0, x_upper], title=metric.upper()),
         yaxis_title="",
         plot_bgcolor="white", paper_bgcolor="white",
         margin=dict(l=300, r=80, t=60, b=40),
@@ -449,12 +466,22 @@ POLYLINES_FILE = PROJECT_DIR / "corridor_polylines.json"
 
 
 def compact_ranking_bar(ranking: pd.DataFrame, top_n: int = 6) -> go.Figure:
-    """A short, executive-summary version of `ranking_bar` — top N corridors only."""
+    """A short, executive-summary version of `ranking_bar` — top N corridors only.
+
+    Only six rows fit in this chart, so we can afford taller rows, a longer
+    left margin for full corridor names, and more right padding so the
+    outside-text values render without clipping in the narrow half-column
+    layout.
+    """
     if ranking.empty:
         return _empty_figure("Awaiting data.")
     top = ranking.head(top_n).copy()
-    fig = ranking_bar(top, metric="phci", title=f"Top {len(top)} corridors by PHCI")
-    fig.update_layout(height=320, margin=dict(l=240, r=60, t=50, b=30))
+    fig = ranking_bar(
+        top, metric="phci",
+        title=f"Top {len(top)} corridors by Peak-Hour Congestion Index",
+        max_name_len=80,
+    )
+    fig.update_layout(height=360, margin=dict(l=300, r=90, t=55, b=40))
     return fig
 
 
