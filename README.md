@@ -160,12 +160,12 @@ Pages:
 | # | Page | Audience |
 |---|---|---|
 | 0 | Overview — headline stats + feature-gating status strip | Both |
-| 1 | Congestion Index Ranking — 28 corridors worst→best | Auditees |
+| 1 | Congestion Index Ranking — 28 corridors, most-congested first | Auditees |
 | 2 | Hourly Heatmap — corridor × hour median CR, weekday + weekend | Auditees |
 | 3 | Direction Asymmetry — inbound vs outbound at AM/PM peak | Auditees |
 | 4 | Reliability Index — BTI (FHWA) + CV cross-check | Both |
-| 5 | Corridor Map — colour-coded Patna map, press-shareable | Press |
-| 6 | Methodology & Data Quality — formulas, coverage, FAIL log, MD5 | CAG seniors |
+| 5 | Corridor Map — colour-coded Patna map, report-ready | Audit team |
+| 6 | Methodology & Data Quality — formulas, coverage, FAIL log, MD5 | Senior reviewers |
 | 7 | Downloads — 10-sheet Excel annexure + 300 DPI PNG bundle | Both |
 
 Every chart self-gates by sample size: **Locked** (insufficient), **Preliminary**

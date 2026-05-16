@@ -1,6 +1,6 @@
 """Page 6 — Methodology & Data Quality.
 
-This is the audit-defensibility page for CAG senior review. Six sections:
+This is the audit-defensibility page for senior reviewer review. Six sections:
   1. Formulas (rendered as LaTeX)
   2. Coverage matrix (corridor × date)
   3. FAIL log (with the 56 bootstrap fails surfaced transparently)
@@ -21,7 +21,8 @@ import plotly
 import streamlit as st
 
 from data import (
-    AUDIT_WINDOW_END, AUDIT_WINDOW_START, data_quality_report, load_observations,
+    AUDIT_WINDOW_END, AUDIT_WINDOW_START, data_quality_report,
+    data_signature, load_observations,
 )
 from metrics import (
     AM_PEAK_HOURS, PM_PEAK_HOURS, ACTIVE_HOURS, SHORT_CORRIDOR_IDS, ranking_table,
@@ -33,12 +34,18 @@ st.set_page_config(page_title="Methodology & Data Quality", page_icon="📐", la
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
-df = _load()
-rep = data_quality_report(df)
+@st.cache_data(ttl=600)
+def _quality(sig: str):
+    return data_quality_report()
+
+
+sig = data_signature()
+df = _load(sig)
+rep = _quality(sig)
 stats = rep["stats"]
 ranking = ranking_table(df)
 
@@ -73,9 +80,9 @@ st.latex(
     r"\text{PHCI}_i = \max\bigl(\mathrm{median}(\text{CR}_{i,d,h}) : "
     r"h \in \{8,9,10,17,18,19\},\ d \in \text{weekdays}\bigr)"
 )
-st.caption("Both directions of a corridor are aggregated by taking the max — represents \"worst direction at worst peak hour\".")
+st.caption("Both directions of a corridor are aggregated by taking the max — represents the peak-hour high in the peak direction.")
 
-st.markdown("**All-Day Congestion Index (ADCI)** — mean of hourly medians over active hours 06-21:")
+st.markdown("**All-Day Congestion Index (ADCI)** — mean of hourly medians over active hours 06-22:")
 st.latex(r"\text{ADCI}_i = \mathrm{mean}_{h \in [6, 22]}\bigl(\text{CR}^{h}_{i}\bigr)")
 
 st.markdown("**Buffer Time Index (BTI)** — FHWA Mobility Monitoring Program standard:")
@@ -297,11 +304,11 @@ with st.expander("Peer-city comparison (placeholder — 101-city programme)"):
     st.markdown(
         "When peer audit offices run this tool for their cities, the same metric "
         "definitions enable apples-to-apples comparison. Each peer city contributes "
-        "their PHCI distribution and the worst-corridor BTI."
+        "its PHCI distribution and the top-ranked-corridor BTI."
     )
     st.dataframe(
         pd.DataFrame({
-            "city": [], "median_PHCI": [], "p95_PHCI": [], "worst_corridor_BTI": [],
+            "city": [], "median_PHCI": [], "p95_PHCI": [], "top_corridor_BTI": [],
         }),
         use_container_width=True,
     )

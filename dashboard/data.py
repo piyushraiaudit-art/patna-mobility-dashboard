@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import glob
 import hashlib
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -37,6 +38,38 @@ AUDIT_WINDOW_END = pd.Timestamp("2026-05-20")
 
 EXPECTED_BATCHES_PER_DAY = 48  # cron every 30 min
 EXPECTED_RECORDS_PER_DAY = EXPECTED_BATCHES_PER_DAY * 56  # 56 OD pairs
+
+
+def data_signature() -> str:
+    """Hashable token that changes when any travel_log CSV changes.
+
+    Every page passes this string as the cache key for load_observations() and
+    data_quality_report(). When the collector writes a new batch (or a new
+    daily CSV lands), the mtime/size of one of the files changes, the
+    signature changes, and Streamlit's @st.cache_data invalidates on the
+    spot — without waiting for the TTL to expire. Keeps the dashboard live
+    against the cron-driven data flow.
+
+    Cheap: stat is O(file count), no file reads.
+    """
+    paths = sorted(glob.glob(str(PROJECT_DIR / "travel_log_*.csv")))
+    bare = PROJECT_DIR / "travel_log.csv"
+    if bare.exists():
+        paths.append(str(bare))
+    corridors = CORRIDORS_FILE
+    if corridors.exists():
+        paths.append(str(corridors))
+    holidays = HOLIDAYS_FILE
+    if holidays.exists():
+        paths.append(str(holidays))
+    parts = []
+    for p in paths:
+        try:
+            s = os.stat(p)
+            parts.append(f"{p}:{s.st_mtime_ns}:{s.st_size}")
+        except FileNotFoundError:
+            continue
+    return hashlib.md5("|".join(parts).encode("utf-8")).hexdigest()
 
 
 def _read_one_log(path: Path) -> pd.DataFrame:

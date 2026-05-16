@@ -1,8 +1,8 @@
-"""Executive Summary — the new landing page.
+"""Executive Summary — the landing page.
 
-A one-screen story for busy CAG seniors and govt officials: top 3 findings
-in plain English, headline KPIs, a mini-map of the worst corridors, and
-jump-links into the detail pages.
+A one-screen story for senior reviewers: top 3 findings in plain English,
+headline KPIs, a mini-map of the most-congested corridors, and jump-links
+into the detail pages.
 """
 
 from __future__ import annotations
@@ -10,7 +10,10 @@ from __future__ import annotations
 import pydeck as pdk
 import streamlit as st
 
-from data import load_observations, data_quality_report, AUDIT_WINDOW_END, AUDIT_WINDOW_START
+from data import (
+    AUDIT_WINDOW_END, AUDIT_WINDOW_START, data_quality_report,
+    data_signature, load_observations,
+)
 from metrics import (
     bti as compute_bti,
     direction_asymmetry,
@@ -52,18 +55,19 @@ st.set_page_config(
 
 
 @st.cache_data(ttl=600, show_spinner="Loading observations…")
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
 @st.cache_data(ttl=600)
-def _quality(_n: int):
+def _quality(sig: str):
     return data_quality_report()
 
 
-df = _load()
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-quality = _quality(len(df))
+quality = _quality(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)
@@ -74,7 +78,7 @@ apply_page_chrome(df, ranking, stats)
 page_header(
     title="Patna Mobility Congestion Index",
     subtitle=(
-        f"Live evidence base for the CAG Urban Mobility Audit · "
+        f"Live evidence base for the audit of urban mobility in Patna · "
         f"{AUDIT_WINDOW_START.date()} → {AUDIT_WINDOW_END.date()} · "
         "28 critical corridors · 30-minute polling via Google Routes API v2."
     ),
@@ -100,14 +104,14 @@ most_unreliable = (
 
 kpi_row([
     KPI(
-        label="Worst corridor (PHCI)",
+        label="Highest peak-hour congestion",
         value=(f"PHCI {float(worst['phci']):.2f} @ "
                f"{int(worst['phci_hour']):02d}:00" if worst is not None else "—"),
         sublabel=(str(worst["corridor_name"]) if worst is not None else "Locked"),
         accent="rose",
     ),
     KPI(
-        label="Longest peak delay",
+        label="Largest peak delay",
         value=(f"{float(longest_delay['minutes_lost']):.1f} min/trip"
                if longest_delay is not None else "—"),
         sublabel=(str(longest_delay["corridor_name"])
@@ -115,7 +119,7 @@ kpi_row([
         accent="amber",
     ),
     KPI(
-        label="Most unreliable",
+        label="Lowest reliability",
         value=(f"BTI {float(most_unreliable['bti']):.2f}"
                if most_unreliable is not None else "—"),
         sublabel=(str(most_unreliable["corridor_name"])
@@ -153,7 +157,7 @@ callout(findings_html, kind="insight",
 # ---------------------------------------------------------------------------
 # Mini-map of top 5 worst corridors — paired with a colour-matched rank list
 # ---------------------------------------------------------------------------
-st.markdown("### Where the worst congestion is happening")
+st.markdown("### Where peak-hour congestion is concentrated")
 st.caption(
     "The five most-congested corridors are drawn in their PHCI colour — "
     "rank 1 is the thickest line, tapering down to rank 5. The 23 remaining "
@@ -166,7 +170,7 @@ with map_col:
     st.pydeck_chart(mini_map(geom, top_n=5), use_container_width=True, height=420)
 with list_col:
     top_rank_list(
-        ranking, top_n=5, title="Top 5 worst corridors",
+        ranking, top_n=5, title="Top 5 most-congested corridors",
         footer="Badge colour matches the line colour on the map. "
                "Hover any line for full statistics.",
     )
@@ -179,7 +183,7 @@ with col_a:
     st.markdown("#### Top corridors by PHCI")
     st.plotly_chart(compact_ranking_bar(ranking, top_n=6), use_container_width=True)
 with col_b:
-    st.markdown("#### When is congestion worst?")
+    st.markdown("#### When does congestion peak?")
     st.plotly_chart(network_hourly_line(df), use_container_width=True)
 
 # ---------------------------------------------------------------------------

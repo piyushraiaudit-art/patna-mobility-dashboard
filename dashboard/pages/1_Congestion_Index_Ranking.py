@@ -1,15 +1,15 @@
 """Page 1 — Congestion Index Ranking.
 
-Brief output #1: a worst→best ranked list of 28 corridors with peak-hour
-ratios, plus the secondary "absolute minutes lost" ranking that contextualises
-short-corridor ratios.
+Brief output #1: a highest- to lowest-PHCI ranking of 28 corridors with
+peak-hour ratios, plus the secondary "absolute minutes lost" ranking that
+contextualises short-corridor ratios.
 """
 
 from __future__ import annotations
 
 import streamlit as st
 
-from data import data_quality_report, load_observations
+from data import data_quality_report, data_signature, load_observations
 from insights import ranking_callout
 from metrics import (
     bti as compute_bti,
@@ -24,25 +24,26 @@ st.set_page_config(page_title="Congestion Index Ranking", page_icon="📊", layo
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
 @st.cache_data(ttl=600)
-def _quality(_n: int):
+def _quality(sig: str):
     return data_quality_report()
 
 
-df = _load()
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-quality = _quality(len(df))
+quality = _quality(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)
 
 page_header(
     title="Congestion Index Ranking",
-    subtitle="Brief output #1 — 28 corridors of Patna, worst-congested first.",
+    subtitle="Brief output #1 — 28 corridors of Patna, most-congested first.",
     eyebrow="Page 1",
 )
 
@@ -63,25 +64,25 @@ longest_delay = ml.iloc[0] if not ml.empty else None
 
 kpi_row([
     KPI(
-        label="Worst PHCI",
+        label="Highest PHCI",
         value=f"{float(worst_phci['phci']):.2f}",
         sublabel=str(worst_phci["corridor_name"]),
         accent="rose",
     ),
     KPI(
-        label="Worst all-day (ADCI)",
+        label="Highest all-day index (ADCI)",
         value=f"{float(worst_adci['adci']):.2f}",
         sublabel=str(worst_adci["corridor_name"]),
         accent="amber",
     ),
     KPI(
-        label="Most unreliable",
+        label="Lowest reliability",
         value=(f"BTI {float(worst_bti['bti']):.2f}" if worst_bti is not None else "—"),
         sublabel=(str(worst_bti["corridor_name"]) if worst_bti is not None else "Locked"),
         accent="violet",
     ),
     KPI(
-        label="Longest peak delay",
+        label="Largest peak delay",
         value=(f"{float(longest_delay['minutes_lost']):.1f} min" if longest_delay is not None else "—"),
         sublabel=(str(longest_delay["corridor_name"]) if longest_delay is not None else "—"),
         accent="cyan",
@@ -93,8 +94,9 @@ kpi_row([
 # ---------------------------------------------------------------------------
 st.subheader("Peak-Hour Congestion Index (PHCI)")
 st.markdown(
-    "Worst-direction, worst-peak-hour weekday median Congestion Ratio per corridor. "
-    "A PHCI of 1.50 means the worst peak-hour median trip took 50% longer than free-flow."
+    "Per corridor: the weekday median Congestion Ratio at the peak hour, taken on "
+    "the peak direction. A PHCI of 1.50 means the peak-hour median trip took "
+    "50% longer than free-flow."
 )
 st.plotly_chart(ranking_bar(ranking), use_container_width=True)
 
@@ -127,8 +129,8 @@ with st.expander("Full ranking table — all metrics, sortable"):
     display["bti"] = display["bti"].round(3)
     display["cv"] = display["cv"].round(3)
     display = display.rename(columns={
-        "phci": "PHCI", "phci_hour": "Worst hour", "phci_direction": "Worst dir",
-        "adci": "ADCI (06-21)", "bti": "BTI (peak)", "cv": "CV (peak)",
+        "phci": "PHCI", "phci_hour": "Peak hour", "phci_direction": "Peak dir",
+        "adci": "ADCI (06-22)", "bti": "BTI (peak)", "cv": "CV (peak)",
         "n_peak": "n peak obs", "is_short_corridor": "Short corridor *",
     })
     st.dataframe(display, use_container_width=True, hide_index=True)

@@ -101,8 +101,8 @@ def build_excel_annexure(df: pd.DataFrame, rep: dict) -> bytes:
             "phci_direction", "adci", "bti", "cv", "n_peak", "is_short_corridor",
         ]].copy()
         ranking_display.columns = [
-            "Rank", "Corridor ID", "Corridor", "PHCI", "Worst hour",
-            "Worst direction", "ADCI (06-21)", "BTI (peak)", "CV (peak)",
+            "Rank", "Corridor ID", "Corridor", "PHCI", "Peak hour",
+            "Peak direction", "ADCI (06-22)", "BTI (peak)", "CV (peak)",
             "n (peak obs)", "Short corridor (<1.5 km)",
         ]
         ranking_display.to_excel(writer, sheet_name="2. Ranking", index=False)

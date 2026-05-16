@@ -108,8 +108,8 @@ def hourly_heatmap(
     `hourly_median` columns: corridor_id, corridor_name, direction, hour,
                              weekday_or_weekend, median_cr, n
     `corridor_order` is a list of corridor_id strings, top-down on Y axis
-                     (worst PHCI first). Both directions of each corridor are
-                     collapsed to the per-corridor median of medians for
+                     (highest PHCI first). Both directions of each corridor
+                     are collapsed to the per-corridor median of medians for
                      display purposes — the per-direction view lives on page 3.
     """
     sub = hourly_median[hourly_median["weekday_or_weekend"] == weekday_or_weekend].copy()
@@ -190,7 +190,7 @@ def hourly_heatmap(
         title=dict(text=f"<b>{title}</b><br><span style='font-size:11px;color:#64748B'>{subtitle}</span>",
                    x=0.0, xanchor="left"),
         xaxis_title="Hour of day (IST)",
-        # worst at top, and force every corridor name to render — without
+        # Highest PHCI at top; force every corridor name to render — without
         # tickmode=array Plotly auto-thins ticks when the chart is dense.
         yaxis=dict(
             autorange="reversed",
@@ -484,7 +484,7 @@ def network_hourly_line(df: pd.DataFrame) -> go.Figure:
         fig.add_vline(x=hr, line=dict(color="#CBD5E1", width=1, dash="dot"))
     fig.update_layout(
         template=PATNA_TEMPLATE,
-        title=dict(text="<b>When is congestion worst? — network median by hour</b>",
+        title=dict(text="<b>When does congestion peak? — network median by hour</b>",
                    x=0.0, xanchor="left"),
         xaxis_title="Hour of day (IST)",
         yaxis_title="Median Congestion Ratio",
@@ -569,7 +569,7 @@ def build_corridor_geometry(df: pd.DataFrame, ranking: pd.DataFrame) -> pd.DataF
 
 def mini_map(display: pd.DataFrame, top_n: int = 5,
              show_labels: bool = False) -> pdk.Deck:
-    """Compact pydeck map showing the top N worst corridors with subtle context.
+    """Compact pydeck map showing the top N most-congested corridors with context.
 
     All 28 corridors are drawn faintly so the geographic context is preserved;
     the top N are emphasised with full opacity, thicker lines, and a small

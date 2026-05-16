@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from data import data_quality_report, load_observations
+from data import data_quality_report, data_signature, load_observations
 from insights import reliability_translation
 from metrics import (
     bti as compute_bti, cv as compute_cv, peak_observations, ranking_table,
@@ -21,18 +21,19 @@ st.set_page_config(page_title="Reliability Index", page_icon="⏱️", layout="w
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
 @st.cache_data(ttl=600)
-def _quality(_n: int):
+def _quality(sig: str):
     return data_quality_report()
 
 
-df = _load()
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-quality = _quality(len(df))
+quality = _quality(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)

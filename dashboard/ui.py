@@ -420,7 +420,7 @@ def top_rank_list(ranking, top_n: int = 5, title: str = "Top corridors",
         meta_bits = []
         if "phci_hour" in r and r["phci_hour"] is not None:
             try:
-                meta_bits.append(f"worst at {int(r['phci_hour']):02d}:00")
+                meta_bits.append(f"peaks at {int(r['phci_hour']):02d}:00")
             except (TypeError, ValueError):
                 pass
         if "phci_direction" in r and r["phci_direction"]:
@@ -521,11 +521,11 @@ def sidebar_glossary_expander() -> None:
 **Congestion Ratio (CR)** — live travel time ÷ free-flow travel time.
 A CR of 1.50 means the trip took 50% longer than free-flow.
 
-**PHCI** — Peak-Hour Congestion Index. Worst-direction, worst-peak-hour
-weekday median CR per corridor. Headline metric.
+**PHCI** — Peak-Hour Congestion Index. Per corridor: the weekday median CR
+at the peak hour and peak direction. Headline metric.
 
 **ADCI** — All-Day Congestion Index. Mean of hourly median CRs across
-06:00–21:59. Captures spread, not just peak.
+06:00–22:59. Captures spread, not just peak.
 
 **BTI** — Buffer Time Index (FHWA standard).
 *(p95 − median) ÷ median* peak duration. A BTI of 0.30 means commuters
@@ -565,7 +565,7 @@ def render_sidebar(df, ranking, stats) -> None:
 
     st.sidebar.markdown(
         '<div class="patna-side-title">Patna Mobility Audit</div>'
-        '<div class="patna-side-sub">CAG audit window · 13–20 May 2026</div>',
+        '<div class="patna-side-sub">Audit window · 13–20 May 2026</div>',
         unsafe_allow_html=True,
     )
     sidebar_status_pills(build_gating_status(df, ranking))

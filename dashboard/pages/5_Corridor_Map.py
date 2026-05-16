@@ -1,7 +1,7 @@
 """Page 5 — Corridor Map.
 
 Brief output #5: an interactive map of Patna with all 28 corridors colour-coded
-by Peak-Hour Congestion Index. Designed for state govt and press sharing.
+by Peak-Hour Congestion Index. Designed as an audit-report-ready visual.
 
 Each corridor is drawn along its actual road geometry, sourced from
 `corridor_polylines.json` (built one-time via `tools/fetch_corridor_polylines.py`
@@ -16,7 +16,7 @@ from __future__ import annotations
 import pydeck as pdk
 import streamlit as st
 
-from data import data_quality_report, load_observations
+from data import data_quality_report, data_signature, load_observations
 from insights import map_narrative
 from metrics import ranking_table
 from ui import apply_page_chrome, audit_context_caption, callout, page_header
@@ -26,18 +26,19 @@ st.set_page_config(page_title="Corridor Map", page_icon="🗺️", layout="wide"
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
 @st.cache_data(ttl=600)
-def _quality(_n: int):
+def _quality(sig: str):
     return data_quality_report()
 
 
-df = _load()
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-quality = _quality(len(df))
+quality = _quality(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)
@@ -46,7 +47,7 @@ page_header(
     title="Patna — Corridor Congestion Map",
     subtitle=("Brief output #5 — all 28 corridors of Patna, drawn along their actual "
               "road geometry and colour-coded by Peak-Hour Congestion Index. "
-              "Suitable for sharing with the State Government and the press."),
+              "Suitable for inclusion in the audit report."),
     eyebrow="Page 5",
 )
 
@@ -109,7 +110,7 @@ view_state = pdk.ViewState(
 tooltip = {
     "html": "<b>{tooltip_prefix}Rank {rank} — {corridor_id}. {corridor_name}</b><br/>"
             "PHCI: {phci_label}<br/>"
-            "Worst hour: {phci_hour}:00<br/>"
+            "Peak hour: {phci_hour}:00<br/>"
             "Est. distance: {est_distance_km} km",
     "style": {"backgroundColor": "white", "color": "#0F172A",
               "fontSize": "12px", "padding": "8px",
@@ -182,5 +183,5 @@ with st.expander("What the lines on this map actually represent"):
 
 audit_context_caption(
     "Map tiles: CARTO Light. Geometry: OpenStreetMap Routing Machine (OSRM). "
-    "Press-quality PNG export available on the Downloads page."
+    "Publication-quality PNG export available on the Downloads page."
 )

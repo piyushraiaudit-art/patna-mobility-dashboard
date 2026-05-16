@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from data import data_quality_report, load_observations
+from data import data_quality_report, data_signature, load_observations
 from insights import heatmap_patterns
 from metrics import (
     GATING, gating_state, hourly_median_cr, ranking_table, weekend_observations,
@@ -23,18 +23,19 @@ st.set_page_config(page_title="Hourly Heatmap", page_icon="🌡️", layout="wid
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
 @st.cache_data(ttl=600)
-def _quality(_n: int):
+def _quality(sig: str):
     return data_quality_report()
 
 
-df = _load()
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-quality = _quality(len(df))
+quality = _quality(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)
@@ -112,6 +113,6 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
 audit_context_caption(
-    "Y-axis sorted by Peak-Hour Congestion Index (worst at top). "
+    "Y-axis sorted by Peak-Hour Congestion Index (highest PHCI at top). "
     "Methodology and full per-cell counts on Page 6."
 )

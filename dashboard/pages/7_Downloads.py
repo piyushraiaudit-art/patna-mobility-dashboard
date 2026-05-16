@@ -11,7 +11,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from data import data_quality_report, load_observations
+from data import data_quality_report, data_signature, load_observations
 from exports import build_excel_annexure, build_png_zip
 from metrics import (
     bti as compute_bti, direction_asymmetry, hourly_median_cr, ranking_table,
@@ -26,13 +26,19 @@ st.set_page_config(page_title="Downloads", page_icon="⬇️", layout="wide")
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
-df = _load()
+@st.cache_data(ttl=600)
+def _quality(sig: str):
+    return data_quality_report()
+
+
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-rep = data_quality_report(df) if not df.empty else None
+rep = _quality(sig) if not df.empty else None
 stats = rep["stats"] if rep is not None else None
 
 if stats is not None:

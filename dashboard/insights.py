@@ -53,20 +53,23 @@ def top_findings(
     """
     out: list[str] = []
 
-    # 1) Worst PHCI corridor
+    # 1) Highest-PHCI corridor
     phci_state = _phci_state(ranking)
     if phci_state == "Locked" or ranking.empty:
-        out.append("Worst-corridor finding will unlock once each corridor has "
+        out.append("Top-ranked-corridor finding will unlock once each corridor has "
                    f"≥ {GATING['phci_weekday'].min_n} weekday peak observations.")
     else:
         w = ranking.iloc[0]
         pct = (float(w["phci"]) - 1.0) * 100
+        dir_pretty = {"A_to_B": "A→B", "B_to_A": "B→A"}.get(
+            str(w["phci_direction"]), str(w["phci_direction"]))
         prelim = " <i>(preliminary)</i>" if phci_state == "Preliminary" else ""
         out.append(
-            f"{_bold(str(w['corridor_name']))} is Patna's worst corridor — "
-            f"peak-hour drivers spend <b>{pct:+.0f}% longer</b> than free-flow time, "
-            f"concentrated at <b>{int(w['phci_hour']):02d}:00</b> "
-            f"(direction {w['phci_direction']}, PHCI {float(w['phci']):.2f}){prelim}."
+            f"{_bold(str(w['corridor_name']))} carries the highest peak-hour "
+            f"congestion in the audit set — peak-hour drivers spend "
+            f"<b>{pct:+.0f}% longer</b> than free-flow time, concentrated at "
+            f"<b>{int(w['phci_hour']):02d}:00</b> (direction {dir_pretty}, "
+            f"PHCI {float(w['phci']):.2f}){prelim}."
         )
 
     # 2) Largest absolute delay (cross-checks short-vs-long corridors)
@@ -88,7 +91,7 @@ def top_findings(
             f"absolute peak delay of the network."
         )
 
-    # 3) Most unreliable corridor
+    # 3) Lowest-reliability corridor
     bti_state = _bti_state(bti_df)
     if bti_state == "Locked" or bti_df.empty:
         out.append("Reliability finding will unlock when peak-window samples reach "
@@ -99,9 +102,10 @@ def top_findings(
         buffer_min = bti_v * 30  # buffer for a notional 30-min trip
         prelim = " <i>(preliminary — BTI uses p95, sensitive to small n)</i>" if bti_state == "Preliminary" else ""
         out.append(
-            f"{_bold(str(b['corridor_name']))} is the most unpredictable "
-            f"(BTI {bti_v:.2f}) — a 30-min trip there must be buffered to "
-            f"<b>{30 + buffer_min:.0f} minutes</b> to be on-time 95 days out of 100{prelim}."
+            f"{_bold(str(b['corridor_name']))} shows the lowest trip-time "
+            f"reliability (BTI {bti_v:.2f}) — a 30-min trip there must be "
+            f"buffered to <b>{30 + buffer_min:.0f} minutes</b> to be on-time "
+            f"95 days out of 100{prelim}."
         )
 
     return out
@@ -131,7 +135,7 @@ def ranking_callout(ranking: pd.DataFrame) -> str:
     return (
         f"Top 3 corridors — {names} — together account for "
         f"<b>{share:.0f}% of all peak-hour congestion above free-flow</b> across the network. "
-        "These deserve first-priority intervention."
+        "These warrant first-priority intervention."
     )
 
 
@@ -247,20 +251,22 @@ def reliability_translation(bti_df: pd.DataFrame) -> str:
     if sub.empty:
         return "BTI not yet computable."
     items = []
+    _DIR = {"A_to_B": "A→B", "B_to_A": "B→A"}
     for _, r in sub.iterrows():
         bti_v = float(r["bti"])
         buf = bti_v * 30
+        dir_pretty = _DIR.get(str(r["direction"]), str(r["direction"]))
         items.append(
-            f"<li>{_bold(str(r['corridor_name']))} ({r['direction']}) — "
+            f"<li>{_bold(str(r['corridor_name']))} ({dir_pretty}) — "
             f"BTI <b>{bti_v:.2f}</b>: a 30-min trip must be buffered to "
             f"<b>{30 + buf:.0f} min</b> to arrive on-time 95% of days.</li>"
         )
     return (
-        "Most unpredictable corridors (BTI = extra time as a % of median):"
+        "Lowest-reliability corridors (BTI = extra time as a % of median):"
         + "<ul>" + "".join(items) + "</ul>"
         "<b>So what:</b> reliability matters as much as average speed. A corridor "
-        "with PHCI 1.4 but BTI 0.5 is worse for commuters than one with PHCI 1.6 "
-        "but BTI 0.2 — predictability lets people plan."
+        "with PHCI 1.4 and BTI 0.5 imposes a larger planning cost on commuters "
+        "than one with PHCI 1.6 and BTI 0.2 — predictability lets people plan."
     )
 
 
@@ -276,7 +282,7 @@ def map_narrative(ranking: pd.DataFrame, top_n: int = 3) -> str:
     for _, r in top.iterrows():
         items.append(
             f"<li><b>★ Rank {int(r['rank'])} — {r['corridor_name']}</b> "
-            f"(PHCI {float(r['phci']):.2f}, worst at {int(r['phci_hour']):02d}:00)</li>"
+            f"(PHCI {float(r['phci']):.2f}, peaks at {int(r['phci_hour']):02d}:00)</li>"
         )
     return (
         "The thickest, most-saturated lines on this map are the priority corridors:"

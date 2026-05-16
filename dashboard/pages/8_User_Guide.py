@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from data import data_quality_report, load_observations
+from data import data_quality_report, data_signature, load_observations
 from metrics import ranking_table
 from ui import apply_page_chrome, audit_context_caption, callout, page_header
 
@@ -17,18 +17,19 @@ st.set_page_config(page_title="User Guide", page_icon="📖", layout="wide")
 
 
 @st.cache_data(ttl=600)
-def _load():
+def _load(sig: str):
     return load_observations()
 
 
 @st.cache_data(ttl=600)
-def _quality(_n: int):
+def _quality(sig: str):
     return data_quality_report()
 
 
-df = _load()
+sig = data_signature()
+df = _load(sig)
 ranking = ranking_table(df)
-quality = _quality(len(df))
+quality = _quality(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)
@@ -46,11 +47,10 @@ page_header(
 st.header("What this dashboard is")
 st.markdown(
     f"""
-This is a measurement tool for the **Patna Urban Mobility Audit** being conducted
-by the **Comptroller and Auditor General of India (CAG)**. It does one job: for
-28 important roads of Patna, it asks Google Maps every 30 minutes how long the
-drive currently takes, compares that to how long the drive *would* take with
-zero traffic, and stores the answer.
+This is a measurement tool for the **audit of urban mobility in Patna**. It
+does one job: for 28 important roads of Patna, it asks Google Maps every 30
+minutes how long the drive currently takes, compares that to how long the
+drive *would* take with zero traffic, and stores the answer.
 
 So far we have **{stats.total_observations:,} measurements across
 {stats.days_covered} day(s)** in the 8-day audit window. From these, the
@@ -96,15 +96,15 @@ st.header("How to read each page")
 with st.expander("Executive Summary (landing page)", expanded=False):
     st.markdown(
         "One-screen story for senior auditors and govt officials: top 3 findings "
-        "in plain English, headline KPI tiles, a mini-map of the worst corridors, "
-        "and links into the detail pages. Start here every visit."
+        "in plain English, headline KPI tiles, a mini-map of the most-congested "
+        "corridors, and links into the detail pages. Start here every visit."
     )
 
 with st.expander("Page 1 — Congestion Index Ranking"):
     st.markdown(
         """
-**Headline metric — PHCI (Peak-Hour Congestion Index):** the worst weekday
-peak-hour median CR per corridor, taken on the worst direction.
+**Headline metric — PHCI (Peak-Hour Congestion Index):** per corridor, the
+weekday median CR at the peak hour and the peak direction.
 
 | PHCI | Plain-English |
 |---|---|
@@ -128,7 +128,7 @@ short corridors.
 with st.expander("Page 2 — Hourly Heatmap"):
     st.markdown(
         """
-Rows are corridors (worst PHCI at top), columns are hours of day (06–22 IST),
+Rows are corridors (highest PHCI at top), columns are hours of day (06–22 IST),
 cell colour = median CR.
 
 | Colour | Meaning |
@@ -188,7 +188,7 @@ with st.expander("Page 5 — Corridor Map"):
         """
 All 28 corridors drawn along their actual road geometry (OpenStreetMap
 Routing Machine), coloured by PHCI. Hover any line for full statistics.
-Top 3 worst corridors are emphasised.
+The top 3 most-congested corridors are emphasised.
 
 **Audit nuance:** the displayed line follows OSRM's path. The CR numbers are
 ratios from Google's own route choice per call — route-invariant, since both
@@ -219,8 +219,8 @@ st.markdown(
 | Short form | Full term | Plain-English meaning |
 |---|---|---|
 | **CR** | Congestion Ratio | (drive time now) ÷ (drive time with no traffic) |
-| **PHCI** | Peak-Hour Congestion Index | Worst weekday peak-hour CR, taken on the worst direction |
-| **ADCI** | All-Day Congestion Index | Mean CR across active hours (06:00–21:59) |
+| **PHCI** | Peak-Hour Congestion Index | Weekday median CR at the peak hour, taken on the peak direction |
+| **ADCI** | All-Day Congestion Index | Mean CR across active hours (06:00–22:59) |
 | **BTI** | Buffer Time Index | Extra time % to budget to be on-time 95 days out of 100 |
 | **CV** | Coefficient of Variation | Day-to-day variability of peak drive times |
 | **OD pair** | Origin-Destination pair | One direction of one corridor |
@@ -231,7 +231,6 @@ st.markdown(
 | **median** | — | Middle value when measurements are sorted |
 | **n** | Sample size | Number of measurements behind a given number |
 | **FHWA** | Federal Highway Administration (US) | The agency whose BTI definition we use |
-| **CAG** | Comptroller and Auditor General (of India) | The audit body |
 | **JPV** | Joint Physical Verification | On-site inspection pillar of the audit |
 | **OSRM** | OpenStreetMap Routing Machine | Free routing engine used for map line geometry |
 | **DPI** | Dots Per Inch | Image resolution (300 DPI = print quality) |

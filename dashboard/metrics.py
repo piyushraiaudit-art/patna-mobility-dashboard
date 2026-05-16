@@ -123,7 +123,7 @@ def phci(df: pd.DataFrame) -> pd.DataFrame:
 
     For each corridor, take the max over the peak hours of the per-(direction, hour)
     weekday median congestion ratio. Both directions are aggregated by taking the
-    max — represents "worst direction at worst peak hour".
+    max — represents the peak-hour high in the peak direction.
     """
     wk = weekday_observations(df)
     wk_peak = peak_observations(wk)
