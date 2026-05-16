@@ -112,11 +112,11 @@ weekday median CR at the peak hour and the peak direction.
 | 1.10 – 1.25 | Mild peak-hour congestion |
 | 1.25 – 1.50 | Noticeable congestion |
 | 1.50 – 2.00 | Heavy peak congestion |
-| > 2.00 | Severe — peak drive is more than twice free-flow |
+| > 2.00 | Very heavy — peak drive is more than twice free-flow |
 
 **Secondary metric — ADCI (All-Day Congestion Index):** mean of hourly median
 CRs across 06:00–21:59. A road can have high PHCI but low ADCI (only bad at
-peak) or moderate PHCI with high ADCI (chronically congested).
+peak) or moderate PHCI with high ADCI (sustained congestion across the day).
 
 **Cross-check — peak minutes lost per trip.** A short corridor can show CR 2.0
 but only ~60 sec of real delay. A long corridor can show CR 1.3 but 5+ min of
@@ -137,11 +137,11 @@ cell colour = median CR.
 | Pale orange | Mild (1.10 – 1.25) |
 | Orange | Noticeable (1.25 – 1.50) |
 | Red | Heavy (1.50 – 2.00) |
-| Dark red | Severe (> 2.00) |
+| Dark red | Very heavy (> 2.00) |
 | Blue | Faster than free-flow (rare; off-peak) |
 
 **Patterns to look for:**
-- Wide red bands → chronic all-day congestion → capacity issue.
+- Wide red bands → sustained all-day congestion → capacity issue.
 - Two distinct red blocks (AM + PM) → directional commuter flow → consider
   one-way / contra-flow.
 - Late-evening red (after 20:00) → after-office market traffic.

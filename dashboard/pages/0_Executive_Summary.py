@@ -7,6 +7,7 @@ into the detail pages.
 
 from __future__ import annotations
 
+import pandas as pd
 import pydeck as pdk
 import streamlit as st
 
@@ -28,7 +29,8 @@ from viz import (
 )
 from insights import top_findings_html
 from ui import (
-    KPI, apply_page_chrome, audit_context_caption, callout, kpi_row, page_header,
+    KPI, apply_page_chrome, audit_context_caption, callout, headline_findings,
+    kpi_row, page_header,
 )
 try:
     from ui import top_rank_list
@@ -90,8 +92,22 @@ if df.empty:
     st.stop()
 
 # ---------------------------------------------------------------------------
-# KPI strip — six cards
+# Per-corridor distance lookup — used in the hero strip and the KPI sublabels
+# below to give the reader physical context for delay/ratio numbers.
 # ---------------------------------------------------------------------------
+_dist_by_corridor = (
+    df.dropna(subset=["est_distance_km"])
+    .drop_duplicates("corridor_id")
+    .set_index("corridor_id")["est_distance_km"]
+    .to_dict()
+)
+
+
+def _dist_str(corridor_id, prefix: str = " · ") -> str:
+    d = _dist_by_corridor.get(str(corridor_id))
+    return f"{prefix}{d:.1f} km corridor" if d else ""
+
+
 ml = minutes_lost_table(df)
 bti_df = compute_bti(df)
 
@@ -102,24 +118,84 @@ most_unreliable = (
     if (not bti_df.empty and bti_df["bti"].notna().any()) else None
 )
 
+# ---------------------------------------------------------------------------
+# Headline findings — two hero cards at the top of the page.
+# Card 1: the highest sustained peak — what every weekday peak hour looks like.
+# Card 2: the highest single observation — the most-congested 30-min window in
+#         the audit dataset.
+# Acronyms PHCI / CR are expanded in full here so every subsequent shorthand
+# on the page has already been introduced. Each card carries an intensity
+# bar (1.0× free-flow → 3.0×+) so the magnitude is readable at a glance.
+# ---------------------------------------------------------------------------
+_hero_cards: list[dict] = []
+
+if worst is not None:
+    pct_over = (float(worst["phci"]) - 1.0) * 100
+    dir_pretty = {"A_to_B": "A→B", "B_to_A": "B→A"}.get(
+        str(worst["phci_direction"]), str(worst["phci_direction"]))
+    _hero_cards.append({
+        "eyebrow": "Highest sustained peak congestion · weekday pattern",
+        "value": f"+{pct_over:.0f}% over free-flow",
+        "ratio": float(worst["phci"]),
+        "where": str(worst["corridor_name"]),
+        "when": (f"Peaks at {int(worst['phci_hour']):02d}:00 IST · "
+                 f"direction {dir_pretty}"),
+        "detail": (f"<b>Peak-Hour Congestion Index (PHCI) "
+                   f"{float(worst['phci']):.2f}</b> · weekday peak-hour median "
+                   f"across {int(worst['n_peak']):,} observations"
+                   f"{_dist_str(worst['corridor_id'])}"),
+        "accent": "indigo",
+    })
+
+if not df.empty:
+    _idx_max = df["congestion_ratio"].idxmax()
+    _w = df.loc[_idx_max]
+    _traffic_min = float(_w["duration_traffic_s"]) / 60.0
+    _free_min = float(_w["duration_freeflow_s"]) / 60.0
+    _hero_cards.append({
+        "eyebrow": "Highest single observation in the audit window",
+        "value": f"{float(_w['congestion_ratio']):.1f}× free-flow time",
+        "ratio": float(_w["congestion_ratio"]),
+        "where": str(_w["corridor_name"]),
+        "when": (f"{_w['day_of_week']} {_w['date']} at "
+                 f"{str(_w['time'])[:5]} IST"),
+        "detail": (f"<b>Congestion Ratio (CR) {float(_w['congestion_ratio']):.2f}</b> · "
+                   f"traffic-aware travel time {_traffic_min:.1f} min vs. "
+                   f"free-flow {_free_min:.1f} min"
+                   f"{_dist_str(_w['corridor_id'])}"),
+        "accent": "amber",
+    })
+
+if _hero_cards:
+    headline_findings(_hero_cards)
+
+# ---------------------------------------------------------------------------
+# KPI strip — six cards
+# ---------------------------------------------------------------------------
 kpi_row([
     KPI(
         label="Highest peak-hour congestion",
         value=(f"PHCI {float(worst['phci']):.2f} @ "
                f"{int(worst['phci_hour']):02d}:00" if worst is not None else "—"),
-        sublabel=(str(worst["corridor_name"]) if worst is not None else "Locked"),
+        sublabel=(
+            f"{worst['corridor_name']}{_dist_str(worst['corridor_id'])}"
+            if worst is not None else "Locked"
+        ),
         accent="rose",
     ),
     KPI(
         label="Largest peak delay",
         value=(f"{float(longest_delay['minutes_lost']):.1f} min/trip"
                if longest_delay is not None else "—"),
-        sublabel=(str(longest_delay["corridor_name"])
-                  if longest_delay is not None else "Awaiting data"),
+        sublabel=(
+            f"{longest_delay['corridor_name']}"
+            f"{_dist_str(longest_delay['corridor_id'])}"
+            if longest_delay is not None else "Awaiting data"
+        ),
         accent="amber",
     ),
     KPI(
-        label="Lowest reliability",
+        label="Lowest reliability (Buffer Time Index)",
         value=(f"BTI {float(most_unreliable['bti']):.2f}"
                if most_unreliable is not None else "—"),
         sublabel=(str(most_unreliable["corridor_name"])

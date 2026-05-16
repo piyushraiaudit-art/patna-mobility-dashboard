@@ -20,6 +20,7 @@ __all__ = [
     "apply_page_chrome",
     "audit_context_caption",
     "callout",
+    "headline_findings",
     "heatmap_color_legend",
     "inject_global_css",
     "kpi_row",
@@ -123,6 +124,97 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; letter-spacing: -0
     color: #64748B;
     margin: 0;
     line-height: 1.4;
+}
+
+/* Headline findings — hero strip on the Executive Summary */
+.patna-headline-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 6px 0 18px 0;
+}
+@media (max-width: 900px) {
+    .patna-headline-grid { grid-template-columns: 1fr; }
+}
+.patna-headline-card {
+    border-radius: 14px;
+    padding: 22px 24px 18px 26px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-left: 5px solid var(--accent, #4F46E5);
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+.patna-headline-eyebrow {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--accent, #4F46E5);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    margin: 0 0 12px 0;
+}
+.patna-headline-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0F172A;
+    margin: 0 0 12px 0;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+}
+.patna-headline-where {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E293B;
+    line-height: 1.35;
+    margin: 0;
+}
+.patna-headline-when {
+    font-size: 12px;
+    color: #475569;
+    font-weight: 500;
+    margin: 5px 0 0 0;
+}
+.patna-headline-detail {
+    font-size: 11.5px;
+    color: #64748B;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #E2E8F0;
+    line-height: 1.5;
+}
+/* Intensity scale — gives a magnitude reference for the big number */
+.patna-headline-scale {
+    margin: 4px 0 14px 0;
+}
+.patna-headline-scale-track {
+    height: 7px;
+    border-radius: 4px;
+    position: relative;
+    background: linear-gradient(to right,
+        #93C5FD 0%, #FFFFFF 12%,
+        #FCD34D 26%, #F97316 41%,
+        #DC2626 70%, #7F1D1D 100%);
+    border: 1px solid #E2E8F0;
+}
+.patna-headline-scale-marker {
+    position: absolute;
+    top: -4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #0F172A;
+    border: 2.5px solid #FFFFFF;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.35);
+    transform: translateX(-50%);
+}
+.patna-headline-scale-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: #94A3B8;
+    margin-top: 6px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
 }
 
 /* Callouts */
@@ -352,6 +444,86 @@ def kpi_row(cards: Iterable[KPI | dict]) -> None:
         )
     st.markdown(
         f'<div class="patna-kpi-grid">{"".join(items)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Headline findings — hero strip used on the Executive Summary
+# ---------------------------------------------------------------------------
+
+_HEADLINE_PALETTE = {
+    "indigo": "#4F46E5",
+    "amber":  "#B45309",
+    "slate":  "#475569",
+    "teal":   "#0F766E",
+}
+
+_SCALE_MIN = 1.0   # free-flow
+_SCALE_MAX = 3.0   # three-times free-flow — top of the heatmap colour scale
+
+
+def _scale_block(ratio: float) -> str:
+    """Render an intensity bar that shows where `ratio` sits between 1.0× and 3.0×.
+
+    The track is the same colour gradient as the heatmap legend so readers can
+    map a headline value back to the rest of the dashboard's visual language.
+    """
+    pct = (ratio - _SCALE_MIN) / (_SCALE_MAX - _SCALE_MIN)
+    pct_clamped = max(0.0, min(1.0, pct)) * 100.0
+    return (
+        '<div class="patna-headline-scale">'
+        '<div class="patna-headline-scale-track">'
+        f'<div class="patna-headline-scale-marker" style="left:{pct_clamped:.1f}%;"></div>'
+        '</div>'
+        '<div class="patna-headline-scale-ticks">'
+        '<span>1.0× free-flow</span>'
+        '<span>2.0× heavy</span>'
+        '<span>3.0×+</span>'
+        '</div>'
+        '</div>'
+    )
+
+
+def headline_findings(items: list[dict]) -> None:
+    """Render a hero strip of headline findings on the Executive Summary.
+
+    Each item supports the following keys:
+      eyebrow  : small uppercase label above the big number
+      value    : the big number itself, displayed at 32px
+      where    : corridor / location line
+      when     : time line
+      detail   : footer detail (HTML allowed)
+      ratio    : float — if provided, an intensity bar is drawn between the
+                 value and the where/when block, with a marker at this ratio
+                 on the 1.0×–3.0× free-flow scale.
+      accent   : palette key — indigo / amber / slate / teal.
+    """
+    if not items:
+        return
+    cards = []
+    for it in items:
+        accent = _HEADLINE_PALETTE.get(it.get("accent", "indigo"),
+                                       _HEADLINE_PALETTE["indigo"])
+        parts = [
+            f'<div class="patna-headline-card" style="--accent:{accent};">',
+        ]
+        if it.get("eyebrow"):
+            parts.append(f'<div class="patna-headline-eyebrow">{it["eyebrow"]}</div>')
+        if it.get("value"):
+            parts.append(f'<div class="patna-headline-value">{it["value"]}</div>')
+        if it.get("ratio") is not None:
+            parts.append(_scale_block(float(it["ratio"])))
+        if it.get("where"):
+            parts.append(f'<div class="patna-headline-where">{it["where"]}</div>')
+        if it.get("when"):
+            parts.append(f'<div class="patna-headline-when">{it["when"]}</div>')
+        if it.get("detail"):
+            parts.append(f'<div class="patna-headline-detail">{it["detail"]}</div>')
+        parts.append("</div>")
+        cards.append("".join(parts))
+    st.markdown(
+        f'<div class="patna-headline-grid">{"".join(cards)}</div>',
         unsafe_allow_html=True,
     )
 

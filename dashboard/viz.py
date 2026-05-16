@@ -342,21 +342,29 @@ def reliability_chart(bti_df: pd.DataFrame, metric: str = "bti") -> go.Figure:
     text = [f"{v:.2f} — {english_label(v)}" for v in df[metric]]
 
     cmax_val = max(0.5, float(df[metric].fillna(0).max() or 0.0))
+    # The longest English label is "Highly unpredictable" (~26 chars including
+    # leading "<value> — "). With textposition="outside", Plotly places that
+    # text just past the bar end in axis coordinates; if the xaxis range
+    # auto-fits to max value, the longest bar's outside text gets clipped at
+    # the plot edge. Force enough headroom past the longest bar — 60% of cmax
+    # — so the text always renders in full.
+    x_upper = max(cmax_val * 1.6, 0.85)
     fig = go.Figure(go.Bar(
         x=df[metric], y=labels, orientation="h",
         marker=dict(color=df[metric], colorscale="Reds",
                     cmin=0, cmax=cmax_val,
                     showscale=False),
         text=text, textposition="outside",
+        cliponaxis=False,
         hovertemplate="%{y}<br>" + metric.upper() + ": %{x:.3f}<extra></extra>",
     ))
     label_text = "Buffer Time Index (FHWA)" if metric == "bti" else "Coefficient of Variation"
     fig.update_layout(
         template=PATNA_TEMPLATE,
         title=dict(text=f"<b>{label_text} — peak window</b>", x=0.0, xanchor="left"),
-        xaxis_title=metric.upper(),
+        xaxis=dict(range=[0, x_upper], title=metric.upper()),
         plot_bgcolor="white", paper_bgcolor="white",
-        margin=dict(l=340, r=200, t=60, b=40),
+        margin=dict(l=340, r=80, t=60, b=40),
         # No height cap: with 56 corridor-direction rows Plotly will otherwise
         # auto-thin the y-tick labels and silently hide every other corridor
         # name. 22px per row + an explicit tickmode guarantees every label

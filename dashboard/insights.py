@@ -168,9 +168,9 @@ def heatmap_patterns(df: pd.DataFrame, top_k: int = 3) -> str:
     if not chronic.empty:
         names = ", ".join(_bold(n) for n in chronic["corridor_name"].astype(str).tolist())
         findings.append(
-            f"<b>Chronic all-day congestion</b> on {names} — congested for "
-            f"6+ hours each weekday. Suggests a <i>capacity</i> constraint, "
-            "not a peak-hour signal-timing issue."
+            f"<b>Sustained all-day congestion</b> on {names} — elevated for "
+            f"six or more hours each weekday. Indicates a <i>capacity</i> "
+            "constraint rather than a peak-hour signal-timing issue."
         )
 
     # Pattern B — two-peak directional commute: CR spikes only in 8-10 and 17-19.
@@ -207,8 +207,8 @@ def heatmap_patterns(df: pd.DataFrame, top_k: int = 3) -> str:
 
     if not findings:
         return ("No strong network-wide patterns yet. Read individual rows: "
-                "wide red bands = chronic congestion; narrow AM/PM red blocks = "
-                "directional commute.")
+                "wide red bands indicate sustained congestion; narrow AM/PM red "
+                "blocks indicate directional commuter flow.")
     return "<ul>" + "".join(f"<li>{f}</li>" for f in findings) + "</ul>"
 
 
