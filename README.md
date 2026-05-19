@@ -5,7 +5,7 @@ origin–destination (OD) pairs across Patna and appends each result to a CSV.
 The CSV is later analysed to produce a Congestion Index for the audit report.
 
 > **Auto-stop:** the script refuses to make any API calls after
-> **2026-05-20 23:59 IST**. This is intentional — the audit collection window
+> **2026-05-28 23:59 IST**. This is intentional — the audit collection window
 > ends then. Running the script after that simply logs a message and exits.
 
 ---
@@ -135,7 +135,7 @@ This removes only the cron entry that references `collect_travel_times.py`,
 leaves the data files and the venv intact. Run `setup.sh` again later to
 re-enable collection.
 
-After the auto-stop date (2026-05-20 23:59 IST), cron will keep firing but
+After the auto-stop date (2026-05-28 23:59 IST), cron will keep firing but
 the script will exit immediately without calling the API. You can leave it
 running or run `stop_collection.sh` to clean up.
 
@@ -206,7 +206,7 @@ Common patterns:
 - Check that `./venv/bin/python` is executable: `ls -l venv/bin/python`.
 
 ### "Collection window closed — exiting"
-This is the hard auto-stop kicking in (after 2026-05-20 23:59 IST). It is
+This is the hard auto-stop kicking in (after 2026-05-28 23:59 IST). It is
 intentional and **not** a bug. Run `./stop_collection.sh` to remove the cron
 entry if you want to silence the daily empty runs.
 

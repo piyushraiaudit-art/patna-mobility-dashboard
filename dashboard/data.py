@@ -34,7 +34,7 @@ CORRIDORS_FILE = PROJECT_DIR / "corridors.csv"
 HOLIDAYS_FILE = PROJECT_DIR / "holidays_bihar.csv"
 
 AUDIT_WINDOW_START = pd.Timestamp("2026-05-13")
-AUDIT_WINDOW_END = pd.Timestamp("2026-05-20")
+AUDIT_WINDOW_END = pd.Timestamp("2026-05-28")
 
 EXPECTED_BATCHES_PER_DAY = 48  # cron every 30 min
 EXPECTED_RECORDS_PER_DAY = EXPECTED_BATCHES_PER_DAY * 56  # 56 OD pairs
@@ -148,7 +148,7 @@ def load_observations() -> pd.DataFrame:
 
     # Restrict to the audit window. The collector emits a one-shot bootstrap
     # batch on 2026-05-12 (one day before the window opens) and may continue
-    # past 2026-05-20 if cron isn't stopped; neither belongs in the published
+    # past 2026-05-28 if cron isn't stopped; neither belongs in the published
     # numbers. Keeping these would pollute PHCI/ADCI hour-20 medians and would
     # contradict the audit-window dates printed on every page header.
     window_start = AUDIT_WINDOW_START.date().isoformat()

@@ -4,12 +4,12 @@ Patna Urban Mobility Audit — Congestion Index Collector
 
 Polls Google Routes API v2 every run for each OD pair in corridors.csv and
 appends one row per pair to travel_log.csv. Designed to be invoked by cron
-every 30 minutes between now and 2026-05-20 23:59 IST.
+every 30 minutes between now and 2026-05-28 23:59 IST.
 
 Maintainer notes:
   - API key is read from the GOOGLE_MAPS_API_KEY env var (.env file supported).
   - Hard auto-stop is enforced at the top of main(): no API calls are made
-    after 2026-05-20 23:59:00 Asia/Kolkata. This is intentional — the audit
+    after 2026-05-28 23:59:00 Asia/Kolkata. This is intentional — the audit
     collection window ends then.
   - Failures on individual corridors are logged and skipped; the batch never
     crashes on a single bad response.
@@ -44,7 +44,7 @@ IST = pytz.timezone("Asia/Kolkata")
 UTC = pytz.utc
 
 # Hard auto-stop: collection window closes at this IST instant.
-CUTOFF_IST = IST.localize(datetime(2026, 5, 20, 23, 59, 0))
+CUTOFF_IST = IST.localize(datetime(2026, 5, 28, 23, 59, 0))
 
 REQUEST_TIMEOUT_SEC = 30
 INTER_CALL_DELAY_SEC = 0.2

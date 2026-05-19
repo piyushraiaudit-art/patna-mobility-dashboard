@@ -105,7 +105,7 @@ st.markdown(
     f"- **PM peak**: hours {sorted(PM_PEAK_HOURS)[0]:02d}:00–{sorted(PM_PEAK_HOURS)[-1]+1:02d}:00 IST.  \n"
     f"- **Active hours** (for ADCI): {ACTIVE_HOURS[0]:02d}:00–{ACTIVE_HOURS[-1]+1:02d}:00 IST.  \n\n"
     "Anchored to Bihar State Government office hours and the National Urban Transport "
-    "Policy convention. **Not** detected from the data — with 2–8 days of observations, "
+    "Policy convention. **Not** detected from the data — with 2–16 days of observations, "
     "data-driven peak detection is unstable and invites the \"you fit the window to "
     "make the numbers look bad\" objection. The auditor can override the window from "
     "the sidebar of pages 1, 3, and 4."
