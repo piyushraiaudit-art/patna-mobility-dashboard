@@ -1,12 +1,13 @@
 """Page 6 — Methodology & Data Quality.
 
-This is the audit-defensibility page for senior reviewer review. Six sections:
+This is the audit-defensibility page for senior reviewer review. Seven sections:
   1. Formulas (rendered as LaTeX)
   2. Coverage matrix (corridor × date)
   3. FAIL log (with the 56 bootstrap fails surfaced transparently)
   4. Distance drift table (defends against "did Google measure the same path?")
   5. Reproducibility signature (MD5 hashes + pinned versions)
   6. Triangulation hooks (Citizen Survey, JPV, peer-city placeholders)
+  7. Corridor-set expansion log (28 → 38 corridors mid-window)
 
 Non-negotiable for the 101-city Mobility Audit Best-Practice framing.
 """
@@ -159,7 +160,9 @@ st.caption(
     "a future time`. The bug (`datetime.now()` evaluated client-side instead of "
     "with a small future offset) was fixed in `collect_travel_times.py` before "
     "cron started. Those rows are excluded from every dashboard surface because "
-    "they pre-date the audit window."
+    "they pre-date the audit window. They reflect the original 28-corridor set "
+    "(28 × 2 directions = 56) and do not involve the corridors added on "
+    "2026-05-20 (see Section 7 below)."
 )
 
 if stats.fail_count > 0:
@@ -232,7 +235,7 @@ with col1:
         f"first observation: {stats.first_timestamp} IST\n"
         f"last observation:  {stats.last_timestamp} IST\n"
         f"days covered:      {stats.days_covered}\n"
-        f"corridors:         {stats.corridors_covered}/28",
+        f"corridors:         {stats.corridors_covered}/38",
         language="text",
     )
 with col2:
@@ -250,7 +253,8 @@ with col2:
         f"start: {AUDIT_WINDOW_START.date()} 00:00 IST\n"
         f"end:   {AUDIT_WINDOW_END.date()} 23:59 IST\n"
         f"polling: every 30 minutes\n"
-        f"OD pairs: 56 (28 corridors × 2 directions)",
+        f"OD pairs: 76 (38 corridors × 2 directions) from 2026-05-20 15:30 IST;\n"
+        f"          56 (28 corridors × 2 directions) before that",
         language="text",
     )
 
@@ -312,6 +316,58 @@ with st.expander("Peer-city comparison (placeholder — 101-city programme)"):
         }),
         use_container_width=True,
     )
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# 7. Corridor-set expansion log
+# ---------------------------------------------------------------------------
+st.header("7. Corridor-set expansion — 28 → 38 corridors mid-window")
+st.markdown(
+    "The audit opened on **2026-05-13** with **28 corridors** (56 OD pairs). On "
+    "**2026-05-20 at ~15:25 IST** — Day 8 of the window — the corridor set was "
+    "expanded by **10 additional corridors** (IDs 25–34, 20 OD pairs) to broaden "
+    "the city-wide footprint. The collector's first batch including the new "
+    "corridors ran at the next cron tick (15:30 IST). Total from that point: "
+    "**38 corridors, 76 OD pairs.**"
+)
+st.markdown(
+    "**Why this matters for the reader.** The original 28 corridors accumulate "
+    "16 days of observations across the audit window. The 10 new corridors "
+    "accumulate ~8.5 days. The dashboard's per-metric gating (Locked / Preliminary / "
+    "Stable) handles the sample-size difference transparently — newer corridors "
+    "may appear with a `n=…` annotation or remain Locked on metrics that require "
+    "a higher batch count, and they unlock automatically as observations "
+    "accumulate."
+)
+st.markdown("**The 10 corridors added on 2026-05-20:**")
+st.dataframe(
+    pd.DataFrame({
+        "corridor_id": ["25", "26", "27", "28", "29", "30", "31", "32", "33", "34"],
+        "corridor_name": [
+            "Gola Road: Rajdhani Fuel Station ↔ Takiyapar",
+            "Bhoothnath Road: Daud Bigha Graveyard ↔ Bhoothnath Metro Station",
+            "Kanti Factory Road: Malahi Pakri Chowk ↔ Kanti Factory More",
+            "Sheikhpura More – RPS More: Sheikhpura More ↔ RPS More",
+            "Jagdev Path: Jagdev Path T-Point ↔ Phulwarisharif",
+            "Postal Park Road: Patna Junction ↔ Bigrahpur Sipara",
+            "Nehru Marg Corridor: Income Tax Golambar ↔ Rajendra Path",
+            "Danapur – Patliputra: Danapur Railway Station ↔ Patliputra Railway Station",
+            "Harding Road – Anisabad: Old Secretariat ↔ Anisabad Golambar",
+            "Zero Mile – Ashok Rajpath: Zero Mile ↔ Ashok Rajpath Road",
+        ],
+        "est_distance_km": [3.2, 1.5, 2.2, 5.5, 4.0, 3.0, 2.5, 6.0, 3.0, 5.8],
+        "first_observation_IST": ["2026-05-20 15:25"] * 10,
+    }),
+    use_container_width=True,
+    hide_index=True,
+)
+st.caption(
+    "All other methodology — formulas, gating thresholds, OK-only filter, "
+    "ratio-based route-invariance — applies identically to the original 28 "
+    "and the new 10. No metric definitions changed. The hard auto-stop on "
+    "2026-05-28 23:59 IST applies to the full 38-corridor set."
+)
 
 audit_context_caption(
     "Methodology page last refreshed at the same data-cache TTL as every other page. "

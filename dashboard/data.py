@@ -9,7 +9,8 @@ Design rules (do not change without good reason):
   * Timestamps in the CSVs are IST clock-time. Treat them as tz-naive. Never
     call tz_localize on this column — the source is already IST.
   * api_status == "OK" filter removes the 56 bootstrap FAIL rows from
-    2026-05-12 20:47 (one-shot "Timestamp must be future" bug, since fixed).
+    2026-05-12 20:47 (one-shot "Timestamp must be future" bug from the
+    original 28-corridor set, since fixed).
     Those FAILs are surfaced separately via data_quality_report() so the
     Methodology page can show them transparently.
   * Dedupe on (timestamp_ist, corridor_id, direction) keeping `last` —
@@ -37,7 +38,11 @@ AUDIT_WINDOW_START = pd.Timestamp("2026-05-13")
 AUDIT_WINDOW_END = pd.Timestamp("2026-05-28")
 
 EXPECTED_BATCHES_PER_DAY = 48  # cron every 30 min
-EXPECTED_RECORDS_PER_DAY = EXPECTED_BATCHES_PER_DAY * 56  # 56 OD pairs
+# OD-pair count expanded mid-window: 56 pairs (28 corridors × 2 directions)
+# from 2026-05-13 through 2026-05-20 15:00 IST; 76 pairs (38 corridors × 2
+# directions) from 2026-05-20 15:30 IST onward. Constant below reflects the
+# post-expansion steady state — use it as a reference only.
+EXPECTED_RECORDS_PER_DAY = EXPECTED_BATCHES_PER_DAY * 76
 
 
 def data_signature() -> str:

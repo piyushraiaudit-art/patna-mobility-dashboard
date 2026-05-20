@@ -1,8 +1,16 @@
 # Patna Urban Mobility Audit — Congestion Index Collector
 
-A small Python tool that calls Google's Routes API v2 every 30 minutes for 56
-origin–destination (OD) pairs across Patna and appends each result to a CSV.
-The CSV is later analysed to produce a Congestion Index for the audit report.
+A small Python tool that calls Google's Routes API v2 every 30 minutes for 76
+origin–destination (OD) pairs across Patna (38 corridors × 2 directions) and
+appends each result to a CSV. The CSV is later analysed to produce a Congestion
+Index for the audit report.
+
+> **Corridor-set expansion (2026-05-20):** the audit opened on 2026-05-13 with
+> 28 corridors (56 OD pairs). On 2026-05-20 at ~15:25 IST, 10 additional
+> corridors (IDs 25–34) were appended to `corridors.csv` to broaden the
+> city-wide footprint. The first cron batch including the new corridors ran
+> at 15:30 IST. See the **Methodology & Data Quality → Section 7** page in the
+> dashboard for the full expansion log.
 
 > **Auto-stop:** the script refuses to make any API calls after
 > **2026-05-28 23:59 IST**. This is intentional — the audit collection window
@@ -15,7 +23,8 @@ The CSV is later analysed to produce a Congestion Index for the audit report.
 | File                       | Purpose                                                      |
 | -------------------------- | ------------------------------------------------------------ |
 | `collect_travel_times.py`  | The collector. Reads `corridors.csv`, writes `travel_log.csv`. |
-| `corridors.csv`            | The 56 OD pairs (28 corridors × 2 directions). Pre-populated. |
+| `corridors.csv`            | The 76 OD pairs (38 corridors × 2 directions). Pre-populated. Expanded from 56 / 28 on 2026-05-20. |
+| `corridors.csv.bak`        | Snapshot of `corridors.csv` immediately before the 2026-05-20 expansion (28 corridors). Kept for audit reproducibility. |
 | `requirements.txt`         | Pinned Python dependencies.                                  |
 | `.env.example`             | Template for the API key. Copy to `.env` and edit.           |
 | `setup.sh`                 | One-shot installer for Ubuntu 22.04 (system pkgs + cron).    |
@@ -75,8 +84,11 @@ Run the collector once, manually:
 You should see a single summary line like:
 
 ```
-[2026-05-12 16:00 IST] 56/56 success, 0 failed
+[2026-05-20 16:00 IST] 76/76 success, 0 failed
 ```
+
+(Runs before 2026-05-20 15:30 IST printed `56/56` — the corridor set was
+expanded from 28 to 38 corridors at that point.)
 
 Then inspect the CSV:
 
@@ -86,7 +98,7 @@ tail -n 60 travel_log.csv
 wc -l travel_log.csv
 ```
 
-Each successful run appends 56 rows.
+Each successful run appends 76 rows (was 56 before 2026-05-20 15:30 IST).
 
 ---
 
@@ -160,7 +172,7 @@ Pages:
 | # | Page | Audience |
 |---|---|---|
 | 0 | Overview — headline stats + feature-gating status strip | Both |
-| 1 | Congestion Index Ranking — 28 corridors, most-congested first | Auditees |
+| 1 | Congestion Index Ranking — 38 corridors, most-congested first | Auditees |
 | 2 | Hourly Heatmap — corridor × hour median CR, weekday + weekend | Auditees |
 | 3 | Direction Asymmetry — inbound vs outbound at AM/PM peak | Auditees |
 | 4 | Reliability Index — BTI (FHWA) + CV cross-check | Both |

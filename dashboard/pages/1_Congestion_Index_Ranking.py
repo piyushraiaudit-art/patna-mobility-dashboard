@@ -1,6 +1,6 @@
 """Page 1 — Congestion Index Ranking.
 
-Brief output #1: a highest- to lowest-PHCI ranking of 28 corridors with
+Brief output #1: a highest- to lowest-PHCI ranking of 38 corridors with
 peak-hour ratios, plus the secondary "absolute minutes lost" ranking that
 contextualises short-corridor ratios.
 """
@@ -43,7 +43,7 @@ apply_page_chrome(df, ranking, stats)
 
 page_header(
     title="Congestion Index Ranking",
-    subtitle="Brief output #1 — 28 corridors of Patna, most-congested first.",
+    subtitle="Brief output #1 — 38 corridors of Patna, most-congested first.",
     eyebrow="Page 1",
 )
 

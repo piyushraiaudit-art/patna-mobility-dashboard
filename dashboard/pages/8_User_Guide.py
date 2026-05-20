@@ -186,7 +186,7 @@ Distribution-shape-agnostic; less sensitive to small samples.
 with st.expander("Page 5 — Corridor Map"):
     st.markdown(
         """
-All 28 corridors drawn along their actual road geometry (OpenStreetMap
+All 38 corridors drawn along their actual road geometry (OpenStreetMap
 Routing Machine), coloured by PHCI. Hover any line for full statistics.
 The top 3 most-congested corridors are emphasised.
 

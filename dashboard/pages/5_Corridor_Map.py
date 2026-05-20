@@ -1,6 +1,6 @@
 """Page 5 — Corridor Map.
 
-Brief output #5: an interactive map of Patna with all 28 corridors colour-coded
+Brief output #5: an interactive map of Patna with all 38 corridors colour-coded
 by Peak-Hour Congestion Index. Designed as an audit-report-ready visual.
 
 Each corridor is drawn along its actual road geometry, sourced from
@@ -45,7 +45,7 @@ apply_page_chrome(df, ranking, stats)
 
 page_header(
     title="Patna — Corridor Congestion Map",
-    subtitle=("Brief output #5 — all 28 corridors of Patna, drawn along their actual "
+    subtitle=("Brief output #5 — all 38 corridors of Patna, drawn along their actual "
               "road geometry and colour-coded by Peak-Hour Congestion Index. "
               "Suitable for inclusion in the audit report."),
     eyebrow="Page 5",
