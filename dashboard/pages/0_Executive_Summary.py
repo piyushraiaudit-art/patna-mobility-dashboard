@@ -20,6 +20,7 @@ from metrics import (
     direction_asymmetry,
     minutes_lost_table,
     ranking_table,
+    slb_indicators,
 )
 from viz import (
     build_corridor_geometry,
@@ -29,8 +30,8 @@ from viz import (
 )
 from insights import top_findings_html
 from ui import (
-    KPI, apply_page_chrome, audit_context_caption, callout, headline_findings,
-    kpi_row, page_header,
+    KPI, SLBIndicator, apply_page_chrome, audit_context_caption, callout,
+    headline_findings, kpi_row, page_header, slb_indicator_strip,
 )
 try:
     from ui import top_rank_list
@@ -221,6 +222,75 @@ kpi_row([
         accent="cyan",
     ),
 ])
+
+# ---------------------------------------------------------------------------
+# SLB-indicator strip — MoUD / NUTP framework alignment
+# ---------------------------------------------------------------------------
+_slb = slb_indicators(df)
+_tcp = _slb.get("traffic_congestion_at_peak", {})
+_tdt = _slb.get("time_delay_in_traffic", {})
+_pcr = _slb.get("pct_congested_roads", {})
+
+
+def _slb_detail(d: dict) -> str:
+    n = d.get("n_per_corr_min", 0)
+    if not n:
+        return ""
+    return f"min n={n}/corridor in MoUD peak"
+
+
+def _slb_value(d: dict, formatter) -> str:
+    if d.get("state") == "Locked":
+        return "—"
+    try:
+        return formatter(d)
+    except (KeyError, TypeError, ValueError):
+        return "—"
+
+
+slb_items = [
+    SLBIndicator(
+        name="Traffic Congestion at Peak",
+        value=_slb_value(
+            _tcp,
+            lambda d: f"+{d['pct_over_freeflow']:.0f}% over free-flow "
+                      f"(CR {d['median_cr']:.2f})",
+        ),
+        definition=(
+            "Network-wide weekday median Congestion Ratio in the MoUD "
+            "peak window (06–10 / 16–20 IST). 1.00 = free-flow."
+        ),
+        state=_tcp.get("state", "Locked"),
+        detail=_slb_detail(_tcp),
+    ),
+    SLBIndicator(
+        name="Time Delay in Traffic",
+        value=_slb_value(
+            _tdt,
+            lambda d: f"{d['median_min_per_km']:.2f} min/km lost at peak",
+        ),
+        definition=(
+            "Median extra travel time per kilometre in the MoUD peak "
+            "window, taken across monitored corridors."
+        ),
+        state=_tdt.get("state", "Locked"),
+        detail=_slb_detail(_tdt),
+    ),
+    SLBIndicator(
+        name="% Congested Roads",
+        value=_slb_value(
+            _pcr,
+            lambda d: f"{d['pct']:.0f}% ({d['n_congested']}/{d['n_corridors']} corridors)",
+        ),
+        definition=(
+            "Share of monitored corridors whose MoUD peak-window median "
+            "Congestion Ratio is ≥ 1.5× (≥ 50% slower than free-flow)."
+        ),
+        state=_pcr.get("state", "Locked"),
+        detail=_slb_detail(_pcr),
+    ),
+]
+slb_indicator_strip(slb_items)
 
 # ---------------------------------------------------------------------------
 # Top 3 findings

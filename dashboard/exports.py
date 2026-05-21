@@ -145,22 +145,33 @@ def build_excel_annexure(df: pd.DataFrame, rep: dict) -> bytes:
         drift.to_excel(writer, sheet_name="8. Distance Drift", index=False)
 
         # 9. Methodology -------------------------------------------------
+        from metrics import (
+            PEAK_PRESETS, active_peak_hours, active_peak_preset,
+        )
+        _am_x, _pm_x, _ = active_peak_hours()
+        _preset_meta_x = PEAK_PRESETS.get(active_peak_preset(), {})
+        _am_label_x = (f"{_am_x[0]:02d}:00 to {_am_x[-1] + 1:02d}:00 IST"
+                       if _am_x else "—")
+        _pm_label_x = (f"{_pm_x[0]:02d}:00 to {_pm_x[-1] + 1:02d}:00 IST"
+                       if _pm_x else "—")
         methodology_rows = [
             ("Instant Congestion Ratio",
              "CR(i,t) = duration_traffic_s / duration_freeflow_s"),
             ("Hourly Median CR",
              "CR_hour = median over the hour, per (corridor, direction, hour)"),
             ("PHCI (Peak-Hour Congestion Index)",
-             "max over peak hours (08-10, 17-19) of weekday median CR per (corridor, direction); "
-             "both directions collapsed by max"),
+             f"max over peak hours of weekday median CR per (corridor, direction); "
+             f"both directions collapsed by max. Peak hours = active preset (see below)."),
             ("ADCI (All-Day Congestion Index)",
              "mean over active hours 06-21 of the hourly median CR"),
             ("BTI (Buffer Time Index, FHWA)",
              "(p95(duration_traffic_peak) - median(duration_traffic_peak)) / median(...)"),
             ("CV (Coefficient of Variation)",
              "sigma(duration_traffic_peak) / mu(duration_traffic_peak)"),
-            ("Peak window — AM", "08:00 to 11:00 IST (hard-coded; Bihar govt office hours)"),
-            ("Peak window — PM", "17:00 to 20:00 IST (hard-coded)"),
+            ("Peak window preset (active at export)",
+             _preset_meta_x.get("label", active_peak_preset())),
+            ("Peak window — AM", _am_label_x),
+            ("Peak window — PM", _pm_label_x),
             ("Active hours (ADCI)", "06:00 to 22:00 IST"),
             ("Short corridors (asterisked in Ranking)",
              ", ".join(sorted(SHORT_CORRIDOR_IDS)) + " — < 1.5 km"),
@@ -169,8 +180,8 @@ def build_excel_annexure(df: pd.DataFrame, rep: dict) -> bytes:
             ("Dedupe key",
              "(timestamp_ist, corridor_id, direction) — last write wins across snapshot CSVs"),
             ("Holidays (Bihar)",
-             "21 May 2026 — Anti-Terrorism Day (observance). Excluded from default weekday "
-             "aggregations; toggle in dashboard sidebar."),
+             "None excluded in the current audit window — every calendar weekday "
+             "13–28 May 2026 enters weekday aggregations on equal footing."),
         ]
         pd.DataFrame(methodology_rows, columns=["Term", "Definition"]).to_excel(
             writer, sheet_name="9. Methodology", index=False

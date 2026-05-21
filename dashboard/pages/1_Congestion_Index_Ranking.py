@@ -17,7 +17,10 @@ from metrics import (
     ranking_table,
     SHORT_CORRIDOR_IDS,
 )
-from ui import KPI, apply_page_chrome, audit_context_caption, callout, kpi_row, page_header
+from ui import (
+    KPI, apply_page_chrome, audit_context_caption, callout,
+    chart_evidence_caption, kpi_row, page_header,
+)
 from viz import ranking_bar
 
 st.set_page_config(page_title="Congestion Index Ranking", page_icon="📊", layout="wide")
@@ -99,6 +102,11 @@ st.markdown(
     "50% longer than free-flow."
 )
 st.plotly_chart(ranking_bar(ranking), use_container_width=True)
+
+chart_evidence_caption(
+    slb="<i>Traffic Congestion at Peak</i> — corridor-level ranking",
+    adm="Audit Design Matrix · Objective 3 (Traffic &amp; Congestion Management), Sub-Objective 3.1",
+)
 
 callout(ranking_callout(ranking), kind="insight",
         title="What this ranking says")

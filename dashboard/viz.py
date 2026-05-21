@@ -179,13 +179,16 @@ def hourly_heatmap(
         )
     )
 
-    # Faint amber bands shade the policy peak windows: AM 08–10, PM 17–19 IST
-    # (matches AM_PEAK_HOURS / PM_PEAK_HOURS in metrics.py). The x-axis is
-    # numeric (string hours like "08" auto-parse to 8), so cells are centred
-    # on integer hours and span ±0.5; bands run from first_peak-0.5 to
-    # last_peak+0.5. layer="below" keeps heat colours clean while the bands
-    # remain visible through empty rows where data is sparse.
-    for first_peak_hr, last_peak_hr in ((8, 10), (17, 19)):
+    # Faint amber bands shade the active peak windows — auto-tracking the
+    # sidebar's peak-window preset so the bands always show what the rest of
+    # the page is computing on. The x-axis is numeric, so cells centred on
+    # integer hours span ±0.5; bands run from first-0.5 to last+0.5.
+    from metrics import active_peak_hours
+    _am_active, _pm_active, _ = active_peak_hours()
+    for hrs in (_am_active, _pm_active):
+        if not hrs:
+            continue
+        first_peak_hr, last_peak_hr = hrs[0], hrs[-1]
         if first_peak_hr in hour_list and last_peak_hr in hour_list:
             fig.add_vrect(
                 x0=first_peak_hr - 0.5,
@@ -524,7 +527,14 @@ def network_hourly_line(df: pd.DataFrame) -> go.Figure:
     fig.add_hline(y=1.0, line=dict(color="#94A3B8", width=1, dash="dash"),
                   annotation_text="Free-flow", annotation_position="bottom right",
                   annotation_font_color="#64748B")
-    for hr in (8, 11, 17, 20):
+    from metrics import active_peak_hours
+    _am_active, _pm_active, _ = active_peak_hours()
+    _edges = set()
+    if _am_active:
+        _edges.update([_am_active[0], _am_active[-1] + 1])
+    if _pm_active:
+        _edges.update([_pm_active[0], _pm_active[-1] + 1])
+    for hr in sorted(_edges):
         fig.add_vline(x=hr, line=dict(color="#CBD5E1", width=1, dash="dot"))
     fig.update_layout(
         template=PATNA_TEMPLATE,

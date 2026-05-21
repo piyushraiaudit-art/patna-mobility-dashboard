@@ -16,10 +16,12 @@ import streamlit as st
 
 __all__ = [
     "KPI",
+    "SLBIndicator",
     "ACCENT_COLORS",
     "apply_page_chrome",
     "audit_context_caption",
     "callout",
+    "chart_evidence_caption",
     "headline_findings",
     "heatmap_color_legend",
     "inject_global_css",
@@ -28,7 +30,9 @@ __all__ = [
     "render_sidebar",
     "sidebar_freshness_footer",
     "sidebar_glossary_expander",
+    "sidebar_peak_window_control",
     "sidebar_status_pills",
+    "slb_indicator_strip",
     "top_rank_list",
 ]
 
@@ -328,6 +332,93 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; letter-spacing: -0
     line-height: 1.4;
 }
 
+/* SLB framework-alignment strip */
+.patna-slb-wrap {
+    background: linear-gradient(135deg, #ECFDF5 0%, #F0FDFA 100%);
+    border: 1px solid #A7F3D0;
+    border-radius: 14px;
+    padding: 16px 18px 14px 18px;
+    margin: 8px 0 18px 0;
+}
+.patna-slb-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #0F766E;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 2px 0;
+}
+.patna-slb-subtitle {
+    font-size: 12px;
+    color: #115E59;
+    font-weight: 500;
+    margin: 0 0 12px 0;
+    line-height: 1.45;
+}
+.patna-slb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+.patna-slb-card {
+    background: #FFFFFF;
+    border: 1px solid #D1FAE5;
+    border-radius: 11px;
+    padding: 12px 14px 12px 14px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    border-left: 3px solid #0F766E;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.patna-slb-name {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #0F766E;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.patna-slb-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0F172A;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+.patna-slb-def {
+    font-size: 11.5px;
+    color: #475569;
+    line-height: 1.4;
+    margin: 2px 0 0 0;
+}
+.patna-slb-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px dashed #E2E8F0;
+    font-size: 10.5px;
+    color: #64748B;
+}
+
+/* Chart-evidence caption — small "Evidences SLB-X / ADM Q-Y" tag under charts */
+.patna-evidence {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: -4px 0 12px 0;
+    background: #F0FDFA;
+    border: 1px solid #99F6E4;
+    border-left: 3px solid #0F766E;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #115E59;
+    font-weight: 500;
+    line-height: 1.45;
+}
+.patna-evidence b { color: #0F766E; font-weight: 700; }
+
 /* Heatmap inline legend */
 .patna-legend {
     display: flex; flex-wrap: wrap; gap: 6px;
@@ -620,6 +711,85 @@ def top_rank_list(ranking, top_n: int = 5, title: str = "Top corridors",
     )
 
 
+# ---------------------------------------------------------------------------
+# SLB-indicator strip — MoUD / NUTP Service Level Benchmark tile row
+# ---------------------------------------------------------------------------
+
+@dataclass
+class SLBIndicator:
+    """One tile in the SLB framework-alignment strip on the Executive Summary."""
+    name: str           # eyebrow, e.g. "Traffic Congestion at Peak"
+    value: str          # big number
+    definition: str     # MoUD framing in one line
+    state: str          # "Locked" | "Preliminary" | "Stable"
+    detail: str = ""    # extra n=… info
+
+
+def slb_indicator_strip(items: list[SLBIndicator],
+                        title: str = "Audit framework alignment · MoUD Service Level Benchmarks",
+                        subtitle: str = (
+                            "These three indicators are the MoUD/NUTP Service Level "
+                            "Benchmarks for urban mobility, computed on the "
+                            "guideline-specified peak window (06–10 AM, 16–20 PM "
+                            "weekdays IST). They map this dashboard onto the "
+                            "framework the audit guidelines ask for."
+                        )) -> None:
+    """Render the SLB framework-alignment strip on the Executive Summary."""
+    if not items:
+        return
+    pill_class = {
+        "Locked":      "patna-pill-locked",
+        "Preliminary": "patna-pill-prelim",
+        "Stable":      "patna-pill-stable",
+    }
+    cards = []
+    for it in items:
+        cls = pill_class.get(it.state, "patna-pill-locked")
+        meta = (
+            f'<span class="patna-status-pill {cls}">{it.state}</span>'
+            + (f'<span>{it.detail}</span>' if it.detail else "")
+        )
+        cards.append(
+            '<div class="patna-slb-card">'
+            f'<div class="patna-slb-name">{it.name}</div>'
+            f'<div class="patna-slb-value">{it.value}</div>'
+            f'<div class="patna-slb-def">{it.definition}</div>'
+            f'<div class="patna-slb-meta">{meta}</div>'
+            '</div>'
+        )
+    st.markdown(
+        f'<div class="patna-slb-wrap">'
+        f'<div class="patna-slb-title">{title}</div>'
+        f'<div class="patna-slb-subtitle">{subtitle}</div>'
+        f'<div class="patna-slb-grid">{"".join(cards)}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def chart_evidence_caption(slb: str = "", adm: str = "", note: str = "") -> None:
+    """Small "Evidences SLB-X · ADM Q-Y" caption to sit under a chart.
+
+    Use under every primary chart on pages 1-4 to tie it back to the
+    Draft Guidelines framework so a senior reviewer can tick coverage
+    off without leaving the page.
+    """
+    bits = []
+    if slb:
+        bits.append(f"<b>SLB:</b> {slb}")
+    if adm:
+        bits.append(f"<b>ADM:</b> {adm}")
+    if note:
+        bits.append(note)
+    if not bits:
+        return
+    st.markdown(
+        f'<div class="patna-evidence">Evidences &nbsp; '
+        + " &nbsp;·&nbsp; ".join(bits) + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
 def _phci_rgb(v: float) -> tuple[int, int, int]:
     """Mirror viz._phci_to_rgb so badge colors match the map lines."""
     if v != v:  # NaN
@@ -685,6 +855,46 @@ def sidebar_status_pills(status_list: list[tuple[str, str, str]]) -> None:
     )
 
 
+def sidebar_peak_window_control() -> None:
+    """Sidebar widget — let the auditor switch the dashboard's peak window.
+
+    Default is the Bihar govt office-hours band (08–11 / 17–20). The MoUD/NUTP
+    Service Level Benchmark band (06–10 / 16–20) is the alternative. Switching
+    re-runs every metric on the new window so a senior reviewer can verify
+    the audit isn't sensitive to the band we picked.
+    """
+    from metrics import PEAK_PRESETS, DEFAULT_PEAK_PRESET, active_peak_hours
+
+    st.sidebar.markdown(
+        '<div style="font-size:11px;font-weight:600;color:#64748B;'
+        'text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 4px 0;">'
+        'Peak-window definition</div>',
+        unsafe_allow_html=True,
+    )
+    keys = list(PEAK_PRESETS.keys())
+    if DEFAULT_PEAK_PRESET in keys:
+        default_idx = keys.index(DEFAULT_PEAK_PRESET)
+    else:
+        default_idx = 0
+    st.sidebar.radio(
+        label="Peak-window preset",
+        options=keys,
+        format_func=lambda k: PEAK_PRESETS[k]["short"],
+        index=default_idx,
+        key="peak_preset",
+        label_visibility="collapsed",
+    )
+    am, pm, _ = active_peak_hours()
+    am_str = f"{am[0]:02d}:00–{am[-1] + 1:02d}:00"
+    pm_str = f"{pm[0]:02d}:00–{pm[-1] + 1:02d}:00"
+    st.sidebar.markdown(
+        f'<div style="font-size:10.5px;color:#64748B;margin:-4px 0 4px 0;'
+        f'line-height:1.4;">Active band · AM {am_str} · PM {pm_str} IST. '
+        f'Every page recomputes on the chosen band.</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def sidebar_glossary_expander() -> None:
     """Collapsible 'How to read this dashboard' for every page."""
     with st.sidebar.expander("How to read this dashboard"):
@@ -706,8 +916,9 @@ must budget 30% extra time to be on-time 95 days out of 100.
 **CV** — Coefficient of Variation. σ ÷ μ of peak duration. Cross-check
 on BTI; less sensitive to small samples.
 
-**Peak windows** — 08–11 AM and 17–20 PM IST (NUTP convention,
-Bihar govt office hours).
+**Peak windows** — set via the sidebar preset above.
+Default = Bihar govt office hours (08–11 / 17–20).
+Alternative = MoUD/NUTP SLB standard (06–10 / 16–20).
 
 **Gating** — Locked = insufficient data; Preliminary = directional only,
 quote with `n`; Stable = audit-defensible.
@@ -740,6 +951,7 @@ def render_sidebar(df, ranking, stats) -> None:
         '<div class="patna-side-sub">Audit window · 13–28 May 2026</div>',
         unsafe_allow_html=True,
     )
+    sidebar_peak_window_control()
     sidebar_status_pills(build_gating_status(df, ranking))
     sidebar_glossary_expander()
     sidebar_freshness_footer(stats)

@@ -27,6 +27,59 @@ PM_PEAK_HOURS = (17, 18, 19)
 PEAK_HOURS = AM_PEAK_HOURS + PM_PEAK_HOURS
 ACTIVE_HOURS = tuple(range(6, 23))  # 06:00-22:59 IST; matches latex h ∈ [6, 22] and the hourly-heatmap default.
 
+# MoUD / NUTP Service Level Benchmark peak window (06-10 AM, 04-08 PM weekdays).
+# The SLB-indicator strip on the Executive Summary is locked to this window
+# regardless of the user-selected preset — these indicators are defined on the
+# MoUD band by name, so they don't change as the auditor toggles the dashboard.
+MOUD_AM_PEAK_HOURS = (6, 7, 8, 9)
+MOUD_PM_PEAK_HOURS = (16, 17, 18, 19)
+MOUD_PEAK_HOURS = MOUD_AM_PEAK_HOURS + MOUD_PM_PEAK_HOURS
+
+# Sidebar-selectable peak-window presets. The user-facing override lets a
+# senior reviewer reproduce every page under the MoUD/NUTP window without
+# editing code; the default is the Bihar govt office-hours band the rest of
+# the methodology page anchors to.
+PEAK_PRESETS = {
+    "bihar_govt": {
+        "label": "Bihar govt office hours",
+        "short": "Bihar govt (08–11 / 17–20)",
+        "long": "08:00–11:00 AM, 17:00–20:00 PM IST — National Urban Transport "
+                "Policy convention, anchored to Bihar State Government office hours.",
+        "am": AM_PEAK_HOURS,
+        "pm": PM_PEAK_HOURS,
+    },
+    "moud_nutp": {
+        "label": "MoUD / NUTP SLB standard",
+        "short": "MoUD/NUTP (06–10 / 16–20)",
+        "long": "06:00–10:00 AM, 16:00–20:00 PM IST — the peak band the "
+                "Ministry of Urban Development / NUTP Service Level Benchmarks specify.",
+        "am": MOUD_AM_PEAK_HOURS,
+        "pm": MOUD_PM_PEAK_HOURS,
+    },
+}
+DEFAULT_PEAK_PRESET = "bihar_govt"
+
+
+def active_peak_preset() -> str:
+    """Return the active peak-window preset key (from Streamlit session state).
+
+    Defaults to bihar_govt when no session state is present (e.g. Excel export
+    run outside the dashboard process). Safe to call from non-Streamlit code.
+    """
+    try:
+        import streamlit as st  # local import: keeps metrics.py importable from CLI
+        return st.session_state.get("peak_preset", DEFAULT_PEAK_PRESET)
+    except Exception:
+        return DEFAULT_PEAK_PRESET
+
+
+def active_peak_hours() -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
+    """Return (am_hours, pm_hours, peak_hours) for the active preset."""
+    preset = PEAK_PRESETS.get(active_peak_preset(), PEAK_PRESETS[DEFAULT_PEAK_PRESET])
+    am = tuple(preset["am"])
+    pm = tuple(preset["pm"])
+    return am, pm, am + pm
+
 
 # ---------------------------------------------------------------------------
 # Gating thresholds — n-based sufficiency for each metric
@@ -87,15 +140,18 @@ def weekend_observations(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def peak_observations(df: pd.DataFrame) -> pd.DataFrame:
-    return df[df["hour"].astype(int).isin(PEAK_HOURS)]
+    _, _, peak = active_peak_hours()
+    return df[df["hour"].astype(int).isin(peak)]
 
 
 def am_peak_observations(df: pd.DataFrame) -> pd.DataFrame:
-    return df[df["hour"].astype(int).isin(AM_PEAK_HOURS)]
+    am, _, _ = active_peak_hours()
+    return df[df["hour"].astype(int).isin(am)]
 
 
 def pm_peak_observations(df: pd.DataFrame) -> pd.DataFrame:
-    return df[df["hour"].astype(int).isin(PM_PEAK_HOURS)]
+    _, pm, _ = active_peak_hours()
+    return df[df["hour"].astype(int).isin(pm)]
 
 
 # ---------------------------------------------------------------------------
@@ -341,6 +397,88 @@ def build_gating_status(df: pd.DataFrame, ranking: pd.DataFrame) -> list[tuple[s
     else:
         out.append(("Direction asymmetry", "Locked", "Awaiting peak-window data"))
 
+    return out
+
+
+def slb_indicators(df: pd.DataFrame, threshold_cr: float = 1.5) -> dict:
+    """Compute the three MoUD/NUTP Service Level Benchmark indicators.
+
+    SLB-1 Traffic Congestion at peak — network-wide weekday peak median CR,
+          using the MoUD 06-10 / 16-20 window (not our internal 08-11 / 17-20).
+    SLB-2 Time Delay in Traffic — median additional travel time per km in the
+          MoUD peak window, taken across the corridors.
+    SLB-3 % Congested Roads — share of monitored corridors whose peak-window
+          median CR is at or above `threshold_cr` (default 1.5×).
+
+    Returns a dict keyed by short name, each value carrying value / detail /
+    gating state / sample-size info.
+    """
+    wk = weekday_observations(df)
+    moud_peak = wk[wk["hour"].astype(int).isin(MOUD_PEAK_HOURS)]
+
+    n_corridors_total = int(df["corridor_id"].nunique()) if not df.empty else 0
+
+    out: dict = {}
+
+    if moud_peak.empty:
+        for k in ("traffic_congestion_at_peak", "time_delay_in_traffic", "pct_congested_roads"):
+            out[k] = {"state": "Locked", "n": 0}
+        out["n_corridors_total"] = n_corridors_total
+        return out
+
+    n_per_corr_min = int(moud_peak.groupby("corridor_id").size().min())
+    state = gating_state(n_per_corr_min, "phci_weekday")
+
+    # --- SLB-1 Traffic Congestion at peak -----------------------------------
+    median_cr_network = float(moud_peak["congestion_ratio"].median())
+    out["traffic_congestion_at_peak"] = {
+        "median_cr": median_cr_network,
+        "pct_over_freeflow": (median_cr_network - 1.0) * 100.0,
+        "n_obs": int(len(moud_peak)),
+        "n_per_corr_min": n_per_corr_min,
+        "state": state,
+    }
+
+    # --- SLB-2 Time Delay in Traffic ----------------------------------------
+    per_corr = (
+        moud_peak.dropna(subset=["est_distance_km"])
+        .groupby("corridor_id")
+        .agg(
+            median_traffic_s=("duration_traffic_s", "median"),
+            median_freeflow_s=("duration_freeflow_s", "median"),
+            est_distance_km=("est_distance_km", "first"),
+        )
+    )
+    per_corr["delay_min_per_km"] = (
+        (per_corr["median_traffic_s"] - per_corr["median_freeflow_s"])
+        / 60.0
+        / per_corr["est_distance_km"].replace(0, np.nan)
+    )
+    median_delay_per_km = float(per_corr["delay_min_per_km"].median()) if not per_corr.empty else np.nan
+    p95_delay_per_km = float(per_corr["delay_min_per_km"].quantile(0.95)) if not per_corr.empty else np.nan
+    out["time_delay_in_traffic"] = {
+        "median_min_per_km": median_delay_per_km,
+        "p95_min_per_km": p95_delay_per_km,
+        "n_obs": int(len(moud_peak)),
+        "n_per_corr_min": n_per_corr_min,
+        "state": state,
+    }
+
+    # --- SLB-3 % Congested Roads --------------------------------------------
+    per_corr_cr = moud_peak.groupby(["corridor_id", "corridor_name"])["congestion_ratio"].median()
+    n_corr = int(per_corr_cr.shape[0])
+    n_congested = int((per_corr_cr >= threshold_cr).sum())
+    pct = round(100.0 * n_congested / n_corr, 1) if n_corr else 0.0
+    out["pct_congested_roads"] = {
+        "n_congested": n_congested,
+        "n_corridors": n_corr,
+        "pct": pct,
+        "threshold_cr": threshold_cr,
+        "n_per_corr_min": n_per_corr_min,
+        "state": state,
+    }
+
+    out["n_corridors_total"] = n_corridors_total
     return out
 
 

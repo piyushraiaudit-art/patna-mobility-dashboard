@@ -15,7 +15,8 @@ from metrics import (
     GATING, gating_state, hourly_median_cr, ranking_table, weekend_observations,
 )
 from ui import (
-    apply_page_chrome, audit_context_caption, callout, heatmap_color_legend, page_header,
+    apply_page_chrome, audit_context_caption, callout, chart_evidence_caption,
+    heatmap_color_legend, page_header,
 )
 from viz import hourly_heatmap
 
@@ -40,10 +41,15 @@ stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)
 
+from metrics import active_peak_hours as _active_peak_hours_for_header
+_am_h, _pm_h, _ = _active_peak_hours_for_header()
+_am_h_label = f"{_am_h[0]:02d}–{_am_h[-1] + 1:02d}" if _am_h else "—"
+_pm_h_label = f"{_pm_h[0]:02d}–{_pm_h[-1] + 1:02d}" if _pm_h else "—"
 page_header(
     title="Hourly Congestion Heatmap",
     subtitle=("Brief output #2 — corridor × hour grid of median Congestion Ratio. "
-              "Shaded bands mark policy peak windows (08–11 AM, 17–20 PM IST)."),
+              f"Shaded bands mark the active peak windows ({_am_h_label} AM, "
+              f"{_pm_h_label} PM IST) — toggle the preset in the sidebar."),
     eyebrow="Page 2",
 )
 
@@ -76,6 +82,11 @@ else:
         weekday_or_weekend="Weekday",
     )
     st.plotly_chart(fig, use_container_width=True)
+
+chart_evidence_caption(
+    slb="<i>Traffic Congestion at Peak</i> &amp; <i>Time Delay in Traffic</i> — hour-resolved",
+    adm="Audit Design Matrix · Objective 3, Sub-Objective 3.1 — peak-band identification and spread",
+)
 
 callout(heatmap_patterns(df), kind="insight",
         title="Patterns to notice in this heatmap")

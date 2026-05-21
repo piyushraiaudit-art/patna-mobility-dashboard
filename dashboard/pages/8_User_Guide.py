@@ -146,7 +146,9 @@ cell colour = median CR.
   one-way / contra-flow.
 - Late-evening red (after 20:00) → after-office market traffic.
 
-Dashed vertical lines mark the policy peak windows (08–11, 17–20).
+Dashed vertical lines mark the active peak windows. Default is Bihar govt
+office hours (08–11 / 17–20); toggle the sidebar preset to switch to the
+MoUD/NUTP SLB standard (06–10 / 16–20) and the bands move with you.
         """
     )
 

@@ -26,7 +26,8 @@ from data import (
     data_signature, load_observations,
 )
 from metrics import (
-    AM_PEAK_HOURS, PM_PEAK_HOURS, ACTIVE_HOURS, SHORT_CORRIDOR_IDS, ranking_table,
+    ACTIVE_HOURS, PEAK_PRESETS, SHORT_CORRIDOR_IDS, active_peak_hours,
+    active_peak_preset, peak_observations, ranking_table, weekday_observations,
 )
 from ui import apply_page_chrome, audit_context_caption, page_header
 from viz import coverage_heatmap, cr_cdf_chart
@@ -100,16 +101,57 @@ st.latex(
     r"{\mu(\text{duration\_traffic}_{i,\text{peak}})}"
 )
 
-st.subheader("Peak window — hard-coded, not data-driven")
+st.subheader("Peak window — policy-anchored, sidebar-switchable")
+_am_active, _pm_active, _ = active_peak_hours()
+_active_key = active_peak_preset()
+_active_preset_meta = PEAK_PRESETS.get(_active_key, {})
 st.markdown(
-    f"- **AM peak**: hours {sorted(AM_PEAK_HOURS)[0]:02d}:00–{sorted(AM_PEAK_HOURS)[-1]+1:02d}:00 IST.  \n"
-    f"- **PM peak**: hours {sorted(PM_PEAK_HOURS)[0]:02d}:00–{sorted(PM_PEAK_HOURS)[-1]+1:02d}:00 IST.  \n"
-    f"- **Active hours** (for ADCI): {ACTIVE_HOURS[0]:02d}:00–{ACTIVE_HOURS[-1]+1:02d}:00 IST.  \n\n"
-    "Anchored to Bihar State Government office hours and the National Urban Transport "
-    "Policy convention. **Not** detected from the data — with 2–16 days of observations, "
-    "data-driven peak detection is unstable and invites the \"you fit the window to "
-    "make the numbers look bad\" objection. The auditor can override the window from "
-    "the sidebar of pages 1, 3, and 4."
+    f"- **AM peak (active)**: {sorted(_am_active)[0]:02d}:00–"
+    f"{sorted(_am_active)[-1] + 1:02d}:00 IST.  \n"
+    f"- **PM peak (active)**: {sorted(_pm_active)[0]:02d}:00–"
+    f"{sorted(_pm_active)[-1] + 1:02d}:00 IST.  \n"
+    f"- **Active hours** (for ADCI): {ACTIVE_HOURS[0]:02d}:00–"
+    f"{ACTIVE_HOURS[-1] + 1:02d}:00 IST.  \n\n"
+    f"Active preset: **{_active_preset_meta.get('label', _active_key)}** — "
+    f"{_active_preset_meta.get('long', '')}  \n\n"
+    "The window is **policy-anchored, not detected from the data** — with 2–16 days of "
+    "observations, data-driven peak detection is unstable and invites the \"you fit the "
+    "window to make the numbers look bad\" objection. Switch presets in the sidebar to "
+    "re-run every page on the alternate band."
+)
+
+st.markdown("**Same numbers under both peak-window definitions** — sensitivity check:")
+_wk_df = weekday_observations(df)
+
+def _stats_under(am_h, pm_h):
+    peak = tuple(am_h) + tuple(pm_h)
+    sub = _wk_df[_wk_df["hour"].astype(int).isin(peak)]
+    if sub.empty:
+        return {"median_cr": None, "p95_cr": None, "n": 0}
+    return {
+        "median_cr": float(sub["congestion_ratio"].median()),
+        "p95_cr": float(sub["congestion_ratio"].quantile(0.95)),
+        "n": int(len(sub)),
+    }
+
+_compare_rows = []
+for k, meta in PEAK_PRESETS.items():
+    s = _stats_under(meta["am"], meta["pm"])
+    _compare_rows.append({
+        "Preset": meta["label"]
+                  + (" (active)" if k == _active_key else ""),
+        "AM band": f"{meta['am'][0]:02d}:00–{meta['am'][-1] + 1:02d}:00",
+        "PM band": f"{meta['pm'][0]:02d}:00–{meta['pm'][-1] + 1:02d}:00",
+        "Network median CR": (f"{s['median_cr']:.3f}" if s['median_cr'] is not None else "—"),
+        "Network p95 CR":    (f"{s['p95_cr']:.3f}"    if s['p95_cr']    is not None else "—"),
+        "Peak observations (n)": s["n"],
+    })
+st.dataframe(pd.DataFrame(_compare_rows), use_container_width=True, hide_index=True)
+st.caption(
+    "Reading: both presets see the same underlying observations; the table shows the "
+    "network-wide weekday median and 95th-percentile Congestion Ratio that result from "
+    "applying each band. A small gap between the two rows is the audit-defensibility "
+    "result — the dashboard's ranking is not artefact of the peak-window choice."
 )
 
 st.subheader("Sample-size sufficiency thresholds")

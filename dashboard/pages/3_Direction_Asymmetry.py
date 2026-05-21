@@ -11,10 +11,13 @@ import streamlit as st
 from data import data_quality_report, data_signature, load_observations
 from insights import asymmetry_implication
 from metrics import (
-    GATING, am_peak_observations, direction_asymmetry, gating_state,
-    pm_peak_observations, ranking_table, weekday_observations,
+    GATING, active_peak_hours, am_peak_observations, direction_asymmetry,
+    gating_state, pm_peak_observations, ranking_table, weekday_observations,
 )
-from ui import apply_page_chrome, audit_context_caption, callout, page_header
+from ui import (
+    apply_page_chrome, audit_context_caption, callout,
+    chart_evidence_caption, page_header,
+)
 from viz import direction_asymmetry_chart
 
 st.set_page_config(page_title="Direction Asymmetry", page_icon="↔️", layout="wide")
@@ -62,13 +65,21 @@ state_pm = gating_state(pm_min, "direction_asymmetry")
 
 asym = direction_asymmetry(df)
 
+chart_evidence_caption(
+    slb="<i>Traffic Congestion at Peak</i> — directional decomposition",
+    adm="Audit Design Matrix · Objective 3, Sub-Objective 3.2 — peak-direction targeting (signal-timing, lane-reversal evidence)",
+)
+
 callout(asymmetry_implication(asym), kind="insight",
         title="What direction asymmetry says about intervention")
 
 # ---------------------------------------------------------------------------
 # AM peak
 # ---------------------------------------------------------------------------
-st.subheader("AM peak (08:00–11:00 IST)")
+_am_hrs, _pm_hrs, _ = active_peak_hours()
+_am_label = f"{_am_hrs[0]:02d}:00–{_am_hrs[-1] + 1:02d}:00" if _am_hrs else "—"
+_pm_label = f"{_pm_hrs[0]:02d}:00–{_pm_hrs[-1] + 1:02d}:00" if _pm_hrs else "—"
+st.subheader(f"AM peak ({_am_label} IST)")
 if state_am != "Locked":
     st.plotly_chart(direction_asymmetry_chart(asym, "AM Peak"), use_container_width=True)
 else:
@@ -79,7 +90,7 @@ st.divider()
 # ---------------------------------------------------------------------------
 # PM peak
 # ---------------------------------------------------------------------------
-st.subheader("PM peak (17:00–20:00 IST)")
+st.subheader(f"PM peak ({_pm_label} IST)")
 if state_pm != "Locked":
     st.plotly_chart(direction_asymmetry_chart(asym, "PM Peak"), use_container_width=True)
 else:

@@ -14,7 +14,10 @@ from metrics import (
     bti as compute_bti, cv as compute_cv, peak_observations, ranking_table,
     weekday_observations,
 )
-from ui import apply_page_chrome, audit_context_caption, callout, page_header
+from ui import (
+    apply_page_chrome, audit_context_caption, callout,
+    chart_evidence_caption, page_header,
+)
 from viz import reliability_chart
 
 st.set_page_config(page_title="Reliability Index", page_icon="⏱️", layout="wide")
@@ -66,6 +69,11 @@ st.markdown(
     "Monitoring Program."
 )
 st.plotly_chart(reliability_chart(bti_df, metric="bti"), use_container_width=True)
+
+chart_evidence_caption(
+    slb="<i>Travel-time reliability</i> (FHWA Mobility Monitoring Program); complements <i>Time Delay in Traffic</i>",
+    adm="Audit Design Matrix · Objective 3, Sub-Objective 3.3 — predictability of commute as a service-level criterion",
+)
 
 st.divider()
 
