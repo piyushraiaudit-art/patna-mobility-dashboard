@@ -179,15 +179,17 @@ def hourly_heatmap(
         )
     )
 
-    # Faint amber bands shade the policy peak windows: 08–11 AM and 17–20 PM IST.
-    # layer="below" keeps heat colours clean; the bands show through empty rows
-    # so the peak windows stay legible where data is sparse.
-    for start_hr, end_hr in ((8, 11), (17, 20)):
-        if start_hr in hour_list and end_hr in hour_list:
-            x0 = hour_list.index(start_hr) - 0.5
-            x1 = hour_list.index(end_hr) - 0.5
+    # Faint amber bands shade the policy peak windows: AM 08–10, PM 17–19 IST
+    # (matches AM_PEAK_HOURS / PM_PEAK_HOURS in metrics.py). The x-axis is
+    # numeric (string hours like "08" auto-parse to 8), so cells are centred
+    # on integer hours and span ±0.5; bands run from first_peak-0.5 to
+    # last_peak+0.5. layer="below" keeps heat colours clean while the bands
+    # remain visible through empty rows where data is sparse.
+    for first_peak_hr, last_peak_hr in ((8, 10), (17, 19)):
+        if first_peak_hr in hour_list and last_peak_hr in hour_list:
             fig.add_vrect(
-                x0=x0, x1=x1,
+                x0=first_peak_hr - 0.5,
+                x1=last_peak_hr + 0.5,
                 fillcolor="#F59E0B", opacity=0.12,
                 layer="below", line_width=0,
             )
