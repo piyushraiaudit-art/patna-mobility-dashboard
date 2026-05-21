@@ -179,11 +179,18 @@ def hourly_heatmap(
         )
     )
 
-    # Vertical dashed lines at policy peak window boundaries: 08, 11, 17, 20.
-    for hr in (8, 11, 17, 20):
-        if hr in hour_list:
-            x_pos = hour_list.index(hr) - 0.5
-            fig.add_vline(x=x_pos, line=dict(color="#374151", width=1, dash="dash"))
+    # Faint amber bands shade the policy peak windows: 08–11 AM and 17–20 PM IST.
+    # layer="below" keeps heat colours clean; the bands show through empty rows
+    # so the peak windows stay legible where data is sparse.
+    for start_hr, end_hr in ((8, 11), (17, 20)):
+        if start_hr in hour_list and end_hr in hour_list:
+            x0 = hour_list.index(start_hr) - 0.5
+            x1 = hour_list.index(end_hr) - 0.5
+            fig.add_vrect(
+                x0=x0, x1=x1,
+                fillcolor="#F59E0B", opacity=0.12,
+                layer="below", line_width=0,
+            )
 
     fig.update_layout(
         template=PATNA_TEMPLATE,

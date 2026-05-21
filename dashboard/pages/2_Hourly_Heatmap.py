@@ -43,7 +43,7 @@ apply_page_chrome(df, ranking, stats)
 page_header(
     title="Hourly Congestion Heatmap",
     subtitle=("Brief output #2 — corridor × hour grid of median Congestion Ratio. "
-              "Dashed lines mark policy peak windows (08–11 AM, 17–20 PM IST)."),
+              "Shaded bands mark policy peak windows (08–11 AM, 17–20 PM IST)."),
     eyebrow="Page 2",
 )
 
