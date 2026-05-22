@@ -392,6 +392,31 @@ h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; letter-spacing: -0
     line-height: 1.4;
     margin: 2px 0 0 0;
 }
+.patna-slb-reality {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 9px;
+    margin: 4px 0 2px 0;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    border-left: 3px solid #C2410C;
+    border-radius: 6px;
+}
+.patna-slb-reality-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #9A3412;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+.patna-slb-reality-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #7C2D12;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+}
 .patna-slb-meta {
     display: flex;
     align-items: center;
@@ -718,21 +743,26 @@ def top_rank_list(ranking, top_n: int = 5, title: str = "Top corridors",
 @dataclass
 class SLBIndicator:
     """One tile in the SLB framework-alignment strip on the Executive Summary."""
-    name: str           # eyebrow, e.g. "Traffic Congestion at Peak"
-    value: str          # big number
-    definition: str     # MoUD framing in one line
-    state: str          # "Locked" | "Preliminary" | "Stable"
-    detail: str = ""    # extra n=… info
+    name: str               # eyebrow, e.g. "Traffic Congestion at Peak"
+    value: str              # big number (the MoUD framework value)
+    definition: str         # MoUD framing in one line
+    state: str              # "Locked" | "Preliminary" | "Stable"
+    detail: str = ""        # extra n=… info
+    reality_label: str = "" # eyebrow on the corridor-reality contrast row
+    reality_value: str = "" # the corridor-level reality the framework value hides
 
 
 def slb_indicator_strip(items: list[SLBIndicator],
-                        title: str = "Audit framework alignment · MoUD Service Level Benchmarks",
+                        title: str = "MoUD Service Level Benchmarks — framework view vs. corridor reality",
                         subtitle: str = (
-                            "These three indicators are the MoUD/NUTP Service Level "
-                            "Benchmarks for urban mobility, computed on the "
-                            "guideline-specified peak window (06–10 AM, 16–20 PM "
-                            "weekdays IST). They map this dashboard onto the "
-                            "framework the audit guidelines ask for."
+                            "MoUD/NUTP Service Level Benchmarks, computed on the "
+                            "guideline peak window (06–10 / 16–20 weekday IST). "
+                            "These are network-wide medians taken across all eight "
+                            "peak hours and all 38 corridors, plus a 1.5× ‘congested’ "
+                            "threshold — together they structurally dilute the "
+                            "concentrated peak-hour congestion residents experience. "
+                            "Beneath each framework value, the corridor-level reality "
+                            "at the corridor’s own peak hour is shown."
                         )) -> None:
     """Render the SLB framework-alignment strip on the Executive Summary."""
     if not items:
@@ -749,10 +779,19 @@ def slb_indicator_strip(items: list[SLBIndicator],
             f'<span class="patna-status-pill {cls}">{it.state}</span>'
             + (f'<span>{it.detail}</span>' if it.detail else "")
         )
+        reality_html = ""
+        if it.reality_value:
+            reality_html = (
+                '<div class="patna-slb-reality">'
+                f'<span class="patna-slb-reality-label">{it.reality_label or "Corridor reality"}</span>'
+                f'<span class="patna-slb-reality-value">{it.reality_value}</span>'
+                '</div>'
+            )
         cards.append(
             '<div class="patna-slb-card">'
             f'<div class="patna-slb-name">{it.name}</div>'
             f'<div class="patna-slb-value">{it.value}</div>'
+            f'{reality_html}'
             f'<div class="patna-slb-def">{it.definition}</div>'
             f'<div class="patna-slb-meta">{meta}</div>'
             '</div>'

@@ -248,6 +248,47 @@ def _slb_value(d: dict, formatter) -> str:
         return "—"
 
 
+def _tcp_reality(d: dict) -> str:
+    cr = d.get("peak_hour_max_cr")
+    pct = d.get("peak_hour_max_pct_over_freeflow")
+    name = d.get("peak_hour_max_corridor", "")
+    hour = d.get("peak_hour_max_hour", -1)
+    if cr is None or cr != cr:
+        return ""
+    hour_txt = f" @ {hour:02d}:00" if isinstance(hour, int) and hour >= 0 else ""
+    return (
+        f"Worst corridor at its peak hour: +{pct:.0f}% over free-flow "
+        f"(CR {cr:.2f})"
+        + (f" — {name}{hour_txt}" if name else "")
+    )
+
+
+def _tdt_reality(d: dict) -> str:
+    worst = d.get("peak_hour_max_min_per_km")
+    name = d.get("peak_hour_max_corridor", "")
+    if worst is None or worst != worst:
+        return ""
+    return (
+        f"Worst corridor at its peak hour: {worst:.2f} min/km lost"
+        + (f" — {name}" if name else "")
+    )
+
+
+def _pcr_reality(d: dict) -> str:
+    n_hard = d.get("n_peak_hour_above_threshold")
+    pct_hard = d.get("pct_peak_hour_above_threshold")
+    n_soft = d.get("n_peak_hour_above_soft")
+    pct_soft = d.get("pct_peak_hour_above_soft")
+    n_corr = d.get("n_corridors")
+    if None in (n_hard, pct_hard, n_soft, pct_soft, n_corr):
+        return ""
+    return (
+        f"At each corridor's actual peak hour: "
+        f"{pct_hard:.0f}% ({n_hard}/{n_corr}) cross ≥ 1.5×, "
+        f"{pct_soft:.0f}% ({n_soft}/{n_corr}) cross ≥ 1.25× (≥ 25% slower)"
+    )
+
+
 slb_items = [
     SLBIndicator(
         name="Traffic Congestion at Peak",
@@ -262,6 +303,8 @@ slb_items = [
         ),
         state=_tcp.get("state", "Locked"),
         detail=_slb_detail(_tcp),
+        reality_label="Corridor reality (peak hour, not 8-hour median)",
+        reality_value=_tcp_reality(_tcp) if _tcp.get("state") != "Locked" else "",
     ),
     SLBIndicator(
         name="Time Delay in Traffic",
@@ -275,6 +318,8 @@ slb_items = [
         ),
         state=_tdt.get("state", "Locked"),
         detail=_slb_detail(_tdt),
+        reality_label="Corridor reality (peak hour, not 8-hour median)",
+        reality_value=_tdt_reality(_tdt) if _tdt.get("state") != "Locked" else "",
     ),
     SLBIndicator(
         name="% Congested Roads",
@@ -288,6 +333,8 @@ slb_items = [
         ),
         state=_pcr.get("state", "Locked"),
         detail=_slb_detail(_pcr),
+        reality_label="Corridor reality (peak hour, both thresholds)",
+        reality_value=_pcr_reality(_pcr) if _pcr.get("state") != "Locked" else "",
     ),
 ]
 slb_indicator_strip(slb_items)

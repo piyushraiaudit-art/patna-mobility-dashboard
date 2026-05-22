@@ -429,11 +429,65 @@ def slb_indicators(df: pd.DataFrame, threshold_cr: float = 1.5) -> dict:
     n_per_corr_min = int(moud_peak.groupby("corridor_id").size().min())
     state = gating_state(n_per_corr_min, "phci_weekday")
 
+    # --- Peak-of-peak reality (per-corridor worst hour, within MoUD window) -
+    # The framework values below take medians across 8 hours × all corridors,
+    # which structurally dilutes individual corridors' peak-hour congestion.
+    # These per-(corridor, hour) cell aggregates surface what residents actually
+    # experience at the worst corridor in its own peak hour.
+    cell = (
+        moud_peak.groupby(["corridor_id", "corridor_name", "hour"])
+        .agg(
+            median_cr=("congestion_ratio", "median"),
+            median_traffic_s=("duration_traffic_s", "median"),
+            median_freeflow_s=("duration_freeflow_s", "median"),
+            est_distance_km=("est_distance_km", "first"),
+        )
+        .reset_index()
+    )
+    if cell.empty:
+        peak_cr_max = float("nan"); peak_cr_corr = ""; peak_cr_hour = -1
+        peak_delay_max = float("nan"); peak_delay_corr = ""
+        n_corr_peak_ge_threshold = 0
+        n_corr_peak_ge_soft = 0
+    else:
+        idx = cell.groupby("corridor_id")["median_cr"].idxmax()
+        corr_peak = cell.loc[idx].reset_index(drop=True)
+        # SLB-3 reality (threshold counts include every monitored corridor — the
+        # whole-population count is robust to any individual corridor's noise).
+        n_corr_peak_ge_threshold = int((corr_peak["median_cr"] >= threshold_cr).sum())
+        n_corr_peak_ge_soft = int((corr_peak["median_cr"] >= 1.25).sum())
+        # SLB-1/2 single-worst-corridor picks exclude short corridors flagged as
+        # signal-cycle-noisy elsewhere in the methodology — keeps the named
+        # exemplar defensible rather than pinned to a 1-km outlier.
+        stable = corr_peak[~corr_peak["corridor_id"].astype(str).isin(SHORT_CORRIDOR_IDS)]
+        if not stable.empty:
+            top_row = stable.sort_values("median_cr", ascending=False).iloc[0]
+            peak_cr_max = float(top_row["median_cr"])
+            peak_cr_corr = str(top_row["corridor_name"])
+            peak_cr_hour = int(top_row["hour"])
+        else:
+            peak_cr_max = float("nan"); peak_cr_corr = ""; peak_cr_hour = -1
+        corr_peak_delay = stable.dropna(subset=["est_distance_km"]).copy()
+        corr_peak_delay["delay_min_per_km"] = (
+            (corr_peak_delay["median_traffic_s"] - corr_peak_delay["median_freeflow_s"]) / 60.0
+            / corr_peak_delay["est_distance_km"].replace(0, np.nan)
+        )
+        if not corr_peak_delay.empty:
+            delay_top = corr_peak_delay.sort_values("delay_min_per_km", ascending=False).iloc[0]
+            peak_delay_max = float(delay_top["delay_min_per_km"])
+            peak_delay_corr = str(delay_top["corridor_name"])
+        else:
+            peak_delay_max = float("nan"); peak_delay_corr = ""
+
     # --- SLB-1 Traffic Congestion at peak -----------------------------------
     median_cr_network = float(moud_peak["congestion_ratio"].median())
     out["traffic_congestion_at_peak"] = {
         "median_cr": median_cr_network,
         "pct_over_freeflow": (median_cr_network - 1.0) * 100.0,
+        "peak_hour_max_cr": peak_cr_max,
+        "peak_hour_max_pct_over_freeflow": (peak_cr_max - 1.0) * 100.0 if peak_cr_max == peak_cr_max else float("nan"),
+        "peak_hour_max_corridor": peak_cr_corr,
+        "peak_hour_max_hour": peak_cr_hour,
         "n_obs": int(len(moud_peak)),
         "n_per_corr_min": n_per_corr_min,
         "state": state,
@@ -459,6 +513,8 @@ def slb_indicators(df: pd.DataFrame, threshold_cr: float = 1.5) -> dict:
     out["time_delay_in_traffic"] = {
         "median_min_per_km": median_delay_per_km,
         "p95_min_per_km": p95_delay_per_km,
+        "peak_hour_max_min_per_km": peak_delay_max,
+        "peak_hour_max_corridor": peak_delay_corr,
         "n_obs": int(len(moud_peak)),
         "n_per_corr_min": n_per_corr_min,
         "state": state,
@@ -469,11 +525,20 @@ def slb_indicators(df: pd.DataFrame, threshold_cr: float = 1.5) -> dict:
     n_corr = int(per_corr_cr.shape[0])
     n_congested = int((per_corr_cr >= threshold_cr).sum())
     pct = round(100.0 * n_congested / n_corr, 1) if n_corr else 0.0
+    pct_peak = round(100.0 * n_corr_peak_ge_threshold / n_corr, 1) if n_corr else 0.0
+    pct_peak_soft = round(100.0 * n_corr_peak_ge_soft / n_corr, 1) if n_corr else 0.0
     out["pct_congested_roads"] = {
         "n_congested": n_congested,
         "n_corridors": n_corr,
         "pct": pct,
         "threshold_cr": threshold_cr,
+        # Peak-hour reality: counts of corridors that cross the threshold at
+        # their own peak hour rather than via the diluted 8-hour median.
+        "n_peak_hour_above_threshold": n_corr_peak_ge_threshold,
+        "pct_peak_hour_above_threshold": pct_peak,
+        "n_peak_hour_above_soft": n_corr_peak_ge_soft,
+        "pct_peak_hour_above_soft": pct_peak_soft,
+        "soft_threshold_cr": 1.25,
         "n_per_corr_min": n_per_corr_min,
         "state": state,
     }
