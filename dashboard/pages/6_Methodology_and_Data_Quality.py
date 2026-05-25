@@ -234,22 +234,69 @@ st.markdown(
     "so reviewers see we have audited the question explicitly."
 )
 st.markdown(
-    "The table below shows, for each (corridor, direction), how many distinct "
-    "`distance_m` values Google returned and the max-vs-min spread. Cells flagged "
-    "with **Re-route = True** are where the spread exceeds 25% of `est_distance_km` "
-    "in `corridors.csv` — a hint that Google occasionally picked a meaningfully "
-    "different path."
+    "The table below shows, for each (corridor, direction): how many distinct "
+    "`distance_m` values Google returned, the median distance, the share of "
+    "calls returning a distance outside a ±5% band around that median "
+    "(`pct_rows_outside_modal_5pct`), and the max-vs-min spread. "
+    "**Re-route = True** flags pairs where the spread exceeds 25% of "
+    "`est_distance_km` in `corridors.csv`. **High path variability = True** "
+    "flags pairs where more than 30% of calls fall outside the ±5% modal band."
 )
 
 drift = rep["distance_drift"].copy()
 drift["delta_pct_of_est"] = drift["delta_pct_of_est"].round(2)
-st.dataframe(drift, use_container_width=True, hide_index=True)
+display_cols = [
+    "corridor_id", "direction",
+    "median_distance_m", "distinct_distances",
+    "pct_rows_outside_modal_5pct",
+    "min_distance_m", "max_distance_m", "delta_m", "delta_pct_of_est",
+    "reroute_flag", "high_path_variability_flag",
+]
+st.dataframe(drift[display_cols], use_container_width=True, hide_index=True)
 
 if drift["reroute_flag"].any():
     n_flagged = int(drift["reroute_flag"].sum())
     st.caption(
         f"{n_flagged} (corridor, direction) pair(s) flagged for re-routing. "
         "The ratio-based metrics on every other page remain valid regardless."
+    )
+
+st.subheader("Highest path-variability corridors")
+st.markdown(
+    "On the (corridor, direction) pairs listed below, more than **30%** of "
+    "calls returned a `distance_m` outside a ±5% band around that route's "
+    "median distance for the audit window. The routing engine selected "
+    "different physical paths on those calls between the named endpoints."
+)
+st.markdown(
+    "The Congestion Ratio remains internally consistent for each row — "
+    "`duration_traffic_s` and `duration_freeflow_s` come from the same API "
+    "response and describe the same chosen route. Aggregated metrics for "
+    "these corridors should be read as the typical travel experience between "
+    "the named endpoints, not as a measurement of a single fixed road."
+)
+
+hv = drift[drift["high_path_variability_flag"]].copy()
+if hv.empty:
+    st.info("No (corridor, direction) pairs exceed the 30% threshold in the current data.")
+else:
+    name_lookup = (
+        df[["corridor_id", "direction", "corridor_name"]]
+        .drop_duplicates(["corridor_id", "direction"])
+    )
+    hv = hv.merge(name_lookup, on=["corridor_id", "direction"], how="left")
+    hv_display = hv[[
+        "corridor_id", "direction", "corridor_name",
+        "median_distance_m", "pct_rows_outside_modal_5pct",
+        "distinct_distances",
+    ]].rename(columns={
+        "pct_rows_outside_modal_5pct": "pct_outside_±5%_band",
+    }).sort_values("pct_outside_±5%_band", ascending=False)
+    st.dataframe(hv_display, use_container_width=True, hide_index=True)
+    st.caption(
+        f"{len(hv)} of {len(drift)} (corridor, direction) pairs meet the "
+        "threshold. Threshold and ±5% band are documented in "
+        "`dashboard/data.py:data_quality_report()`."
     )
 
 st.divider()

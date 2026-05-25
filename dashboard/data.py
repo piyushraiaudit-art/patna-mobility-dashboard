@@ -233,7 +233,9 @@ def data_quality_report(df: pd.DataFrame | None = None) -> dict:
       fail_log     : Full FAIL-rows dataframe (one row per failed call).
       fail_summary : DataFrame of FAIL counts grouped by error pattern.
       distance_drift: DataFrame: corridor_id, direction, distinct distances,
-                      delta_m, delta_pct_of_est.
+                      min/max/median distance, delta_m, delta_pct_of_est,
+                      pct_rows_outside_modal_5pct, reroute_flag,
+                      high_path_variability_flag.
       cr_distribution: pd.Series of all CR values (for CDF plotting).
     """
     obs = df if df is not None else load_observations()
@@ -297,11 +299,43 @@ def data_quality_report(df: pd.DataFrame | None = None) -> dict:
     ).round(2)
     drift["reroute_flag"] = drift["delta_pct_of_est"] > 25.0
 
+    # Per-route path-variability metric: share of distance readings falling
+    # outside a ±5% band around the route's median distance. More
+    # interpretable than min/max spread because it weights by how often the
+    # routing engine departed from the dominant path, not just how far it
+    # ever wandered. Threshold 30% defines the high_path_variability flag
+    # surfaced in the standalone observation on the Methodology page.
+    modal_rows = []
+    for (cid, dirn), group in obs.groupby(["corridor_id", "direction"]):
+        dists = group["distance_m"].dropna()
+        if dists.empty:
+            modal_rows.append({
+                "corridor_id": cid, "direction": dirn,
+                "median_distance_m": pd.NA,
+                "pct_rows_outside_modal_5pct": pd.NA,
+            })
+            continue
+        med = float(dists.median())
+        lo, hi = med * 0.95, med * 1.05
+        pct_out = round(100.0 * ((dists < lo) | (dists > hi)).mean(), 1)
+        modal_rows.append({
+            "corridor_id": cid, "direction": dirn,
+            "median_distance_m": int(round(med)),
+            "pct_rows_outside_modal_5pct": pct_out,
+        })
+    modal = pd.DataFrame(modal_rows)
+    drift = drift.merge(modal, on=["corridor_id", "direction"], how="left")
+    drift["high_path_variability_flag"] = (
+        drift["pct_rows_outside_modal_5pct"].fillna(0) > 30.0
+    )
+
     return {
         "stats": stats,
         "coverage": coverage,
         "fail_log": fails,
         "fail_summary": fail_summary,
-        "distance_drift": drift.sort_values("distinct_distances", ascending=False),
+        "distance_drift": drift.sort_values(
+            "pct_rows_outside_modal_5pct", ascending=False, na_position="last"
+        ),
         "cr_distribution": obs["congestion_ratio"].copy(),
     }
