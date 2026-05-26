@@ -16,7 +16,7 @@ from __future__ import annotations
 import pydeck as pdk
 import streamlit as st
 
-from data import data_quality_report, data_signature, load_observations
+from data import cached_observations, cached_quality_report, data_signature
 from insights import map_narrative
 from metrics import ranking_table
 from ui import apply_page_chrome, audit_context_caption, callout, page_header
@@ -25,20 +25,10 @@ from viz import build_corridor_geometry
 st.set_page_config(page_title="Corridor Map", page_icon="🗺️", layout="wide")
 
 
-@st.cache_data(ttl=600)
-def _load(sig: str):
-    return load_observations()
-
-
-@st.cache_data(ttl=600)
-def _quality(sig: str):
-    return data_quality_report()
-
-
 sig = data_signature()
-df = _load(sig)
+df = cached_observations(sig)
 ranking = ranking_table(df)
-quality = _quality(sig)
+quality = cached_quality_report(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)

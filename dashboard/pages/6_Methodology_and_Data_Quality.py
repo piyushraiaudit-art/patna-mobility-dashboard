@@ -22,8 +22,8 @@ import plotly
 import streamlit as st
 
 from data import (
-    AUDIT_WINDOW_END, AUDIT_WINDOW_START, data_quality_report,
-    data_signature, load_observations,
+    AUDIT_WINDOW_END, AUDIT_WINDOW_START, cached_observations,
+    cached_quality_report, data_signature,
 )
 from metrics import (
     ACTIVE_HOURS, PEAK_PRESETS, SHORT_CORRIDOR_IDS, active_peak_hours,
@@ -35,19 +35,9 @@ from viz import coverage_heatmap, cr_cdf_chart
 st.set_page_config(page_title="Methodology & Data Quality", page_icon="📐", layout="wide")
 
 
-@st.cache_data(ttl=600)
-def _load(sig: str):
-    return load_observations()
-
-
-@st.cache_data(ttl=600)
-def _quality(sig: str):
-    return data_quality_report()
-
-
 sig = data_signature()
-df = _load(sig)
-rep = _quality(sig)
+df = cached_observations(sig)
+rep = cached_quality_report(sig)
 stats = rep["stats"]
 ranking = ranking_table(df)
 

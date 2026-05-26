@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from data import data_quality_report, data_signature, load_observations
+from data import cached_observations, cached_quality_report, data_signature
 from insights import ranking_callout
 from metrics import (
     bti as compute_bti,
@@ -26,20 +26,10 @@ from viz import ranking_bar
 st.set_page_config(page_title="Congestion Index Ranking", page_icon="📊", layout="wide")
 
 
-@st.cache_data(ttl=600)
-def _load(sig: str):
-    return load_observations()
-
-
-@st.cache_data(ttl=600)
-def _quality(sig: str):
-    return data_quality_report()
-
-
 sig = data_signature()
-df = _load(sig)
+df = cached_observations(sig)
 ranking = ranking_table(df)
-quality = _quality(sig)
+quality = cached_quality_report(sig)
 stats = quality["stats"]
 
 apply_page_chrome(df, ranking, stats)

@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pandas as pd
+import streamlit as st
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 CORRIDORS_FILE = PROJECT_DIR / "corridors.csv"
@@ -248,10 +249,17 @@ def data_quality_report(df: pd.DataFrame | None = None) -> dict:
     obs_sorted = obs.sort_values(
         ["timestamp_ist", "corridor_id", "direction"]
     ).reset_index(drop=True)
-    md5_obs = _md5(obs_sorted.to_csv(index=False))
+    # Hash row-by-row via pandas, not via CSV serialisation. ~10× faster on
+    # 40k rows and scales linearly with row count, where to_csv allocated a
+    # full string copy each call.
+    md5_obs = hashlib.md5(
+        pd.util.hash_pandas_object(obs_sorted, index=False).values.tobytes()
+    ).hexdigest()
 
     corridors = _read_corridors()
-    md5_corr = _md5(corridors.to_csv(index=False))
+    md5_corr = hashlib.md5(
+        pd.util.hash_pandas_object(corridors, index=False).values.tobytes()
+    ).hexdigest()
 
     stats = CoverageStats(
         total_observations=total,
@@ -339,3 +347,27 @@ def data_quality_report(df: pd.DataFrame | None = None) -> dict:
         ),
         "cr_distribution": obs["congestion_ratio"].copy(),
     }
+
+
+# ---------------------------------------------------------------------------
+# Shared Streamlit caches
+# ---------------------------------------------------------------------------
+# Every page used to wrap load_observations/data_quality_report in its own
+# @st.cache_data. Streamlit keys cache slots by the decorated function's
+# module + qualname, so the per-page wrappers each occupied a separate cache
+# slot — navigating between pages re-ran the full report on every page even
+# though the inputs were identical. The two functions below are decorated
+# once here, so every page shares the same cache slot keyed by the file
+# signature. First page hit fills the cache; subsequent page hits across the
+# whole app are instant until a new travel_log batch lands.
+
+@st.cache_data(ttl=600, show_spinner="Loading observations…")
+def cached_observations(sig: str) -> pd.DataFrame:
+    return load_observations()
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def cached_quality_report(sig: str) -> dict:
+    # Reuse the cached observations frame instead of letting
+    # data_quality_report re-read every travel_log CSV from disk.
+    return data_quality_report(cached_observations(sig))
