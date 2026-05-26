@@ -6,7 +6,7 @@ Methodology page render their numbers from these functions — single source
 of truth across every output.
 
 Hard-coded peak windows (08:00-11:00 AM, 17:00-20:00 PM IST) are deliberate.
-Data-driven peak detection is unstable on 2-16 days of data and invites the
+Data-driven peak detection is unstable on 2-14 days of data and invites the
 "you fit the window to make the numbers look bad" objection. Anchor to
 Bihar govt office hours and the National Urban Transport Policy convention.
 """

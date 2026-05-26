@@ -6,11 +6,15 @@ Polls Google Routes API v2 every run for each OD pair in corridors.csv and
 appends one row per pair to travel_log.csv. Designed to be invoked by cron
 every 30 minutes between now and 2026-05-28 23:59 IST.
 
+For this audit, the operator halted cron on 2026-05-26 — collection ended
+two days short of the in-script cutoff. The final audit window is 13–26 May
+2026. The in-script cutoff below remains in place as a safety net if cron
+is ever restarted.
+
 Maintainer notes:
   - API key is read from the GOOGLE_MAPS_API_KEY env var (.env file supported).
   - Hard auto-stop is enforced at the top of main(): no API calls are made
-    after 2026-05-28 23:59:00 Asia/Kolkata. This is intentional — the audit
-    collection window ends then.
+    after 2026-05-28 23:59:00 Asia/Kolkata.
   - Failures on individual corridors are logged and skipped; the batch never
     crashes on a single bad response.
 """

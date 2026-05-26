@@ -43,7 +43,7 @@ minutes how long the drive currently takes, compares that to how long the
 drive *would* take with zero traffic, and stores the answer.
 
 So far we have **{stats.total_observations:,} measurements across
-{stats.days_covered} day(s)** in the 16-day audit window. From these, the
+{stats.days_covered} day(s)** in the 14-day audit window. From these, the
 dashboard produces ranked lists, heatmaps, and a map that show **which roads of
 Patna are congested, when, and by how much** — replacing "Bailey Road feels
 congested" with "Bailey Road takes 11 minutes at 6 AM and 36 minutes at
@@ -242,7 +242,7 @@ The sidebar shows a small pill for each metric:
 - **Stable** — sample size has crossed the audit-defensibility threshold. Cite without caveat.
 
 Pills update automatically as the collector adds measurements every 30 minutes.
-By 28 May 2026 (end of the audit window) every metric should be Stable.
+By 26 May 2026 (end of the audit window) every metric should be Stable.
     """
 )
 

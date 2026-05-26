@@ -12,9 +12,14 @@ Index for the audit report.
 > at 15:30 IST. See the **Methodology & Data Quality → Section 7** page in the
 > dashboard for the full expansion log.
 
-> **Auto-stop:** the script refuses to make any API calls after
-> **2026-05-28 23:59 IST**. This is intentional — the audit collection window
-> ends then. Running the script after that simply logs a message and exits.
+> **Collection ended 2026-05-26.** Cron was halted by the operator on this date
+> ahead of the in-script hard auto-stop (2026-05-28 23:59 IST), trimming the
+> window from 16 days to 14. The final audit window is **13–26 May 2026**. The
+> in-script cutoff below still applies if cron is ever restarted.
+
+> **Auto-stop (in-script safety net):** the script refuses to make any API calls
+> after **2026-05-28 23:59 IST**. Running the script after that simply logs a
+> message and exits.
 
 ---
 
@@ -147,9 +152,10 @@ This removes only the cron entry that references `collect_travel_times.py`,
 leaves the data files and the venv intact. Run `setup.sh` again later to
 re-enable collection.
 
-After the auto-stop date (2026-05-28 23:59 IST), cron will keep firing but
-the script will exit immediately without calling the API. You can leave it
-running or run `stop_collection.sh` to clean up.
+Collection for this audit was halted on **2026-05-26** by `stop_collection.sh`.
+Even if it had run to the in-script auto-stop date (2026-05-28 23:59 IST), cron
+would have kept firing but the script would have exited immediately without
+calling the API. Either way, run `stop_collection.sh` to clean up.
 
 ---
 

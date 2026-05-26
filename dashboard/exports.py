@@ -221,7 +221,7 @@ def build_excel_annexure(df: pd.DataFrame, rep: dict) -> bytes:
              "(timestamp_ist, corridor_id, direction) — last write wins across snapshot CSVs"),
             ("Holidays (Bihar)",
              "None excluded in the current audit window — every calendar weekday "
-             "13–28 May 2026 enters weekday aggregations on equal footing."),
+             "13–26 May 2026 enters weekday aggregations on equal footing."),
         ]
         methodology_df = pd.DataFrame(methodology_rows, columns=["Term", "Definition"])
         methodology_df.to_excel(writer, sheet_name="9. Methodology", index=False)

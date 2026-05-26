@@ -104,7 +104,7 @@ st.markdown(
     f"{ACTIVE_HOURS[-1] + 1:02d}:00 IST.  \n\n"
     f"Active preset: **{_active_preset_meta.get('label', _active_key)}** — "
     f"{_active_preset_meta.get('long', '')}  \n\n"
-    "The window is **policy-anchored, not detected from the data** — with 2–16 days of "
+    "The window is **policy-anchored, not detected from the data** — with 2–14 days of "
     "observations, data-driven peak detection is unstable and invites the \"you fit the "
     "window to make the numbers look bad\" objection. Switch presets in the sidebar to "
     "re-run every page on the alternate band."
@@ -412,8 +412,8 @@ st.markdown(
 )
 st.markdown(
     "**Why this matters for the reader.** The original 28 corridors accumulate "
-    "16 days of observations across the audit window. The 10 new corridors "
-    "accumulate ~8.5 days. The dashboard's per-metric gating (Locked / Preliminary / "
+    "14 days of observations across the audit window. The 10 new corridors "
+    "accumulate ~6.5 days. The dashboard's per-metric gating (Locked / Preliminary / "
     "Stable) handles the sample-size difference transparently — newer corridors "
     "may appear with a `n=…` annotation or remain Locked on metrics that require "
     "a higher batch count, and they unlock automatically as observations "
@@ -444,8 +444,8 @@ st.dataframe(
 st.caption(
     "All other methodology — formulas, gating thresholds, OK-only filter, "
     "ratio-based route-invariance — applies identically to the original 28 "
-    "and the new 10. No metric definitions changed. The hard auto-stop on "
-    "2026-05-28 23:59 IST applies to the full 38-corridor set."
+    "and the new 10. No metric definitions changed. Collection ended on "
+    "2026-05-26 23:59 IST for the full 38-corridor set."
 )
 
 audit_context_caption(

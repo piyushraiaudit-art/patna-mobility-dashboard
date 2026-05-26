@@ -677,7 +677,7 @@ def callout(body: str, kind: str = "insight", title: str = "") -> None:
 # ---------------------------------------------------------------------------
 
 def audit_context_caption(extra: str = "") -> None:
-    base = ("28 Patna corridors · 13–28 May 2026 · Google Routes API v2 (30-min polling). "
+    base = ("28 Patna corridors · 13–26 May 2026 · Google Routes API v2 (30-min polling). "
             "Data-driven evidence base for the Patna Urban Mobility Audit.")
     text = f"{base} {extra}".strip()
     st.markdown(f'<div class="patna-context">{text}</div>', unsafe_allow_html=True)
@@ -987,7 +987,7 @@ def render_sidebar(df, ranking, stats) -> None:
 
     st.sidebar.markdown(
         '<div class="patna-side-title">Patna Mobility Audit</div>'
-        '<div class="patna-side-sub">Audit window · 13–28 May 2026</div>',
+        '<div class="patna-side-sub">Audit window · 13–26 May 2026</div>',
         unsafe_allow_html=True,
     )
     sidebar_peak_window_control()
