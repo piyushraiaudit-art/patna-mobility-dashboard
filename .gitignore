@@ -31,3 +31,6 @@ Thumbs.db
 *.egg-info/
 dist/
 build/
+
+# Claude Code harness runtime artefacts (session lock, local state)
+.claude/
