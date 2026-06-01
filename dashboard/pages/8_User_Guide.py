@@ -38,7 +38,7 @@ st.header("What this dashboard is")
 st.markdown(
     f"""
 This is a measurement tool for the **audit of urban mobility in Patna**. It
-does one job: for 28 important roads of Patna, it asks Google Maps every 30
+does one job: for 38 important roads of Patna, it asks Google Maps every 30
 minutes how long the drive currently takes, compares that to how long the
 drive *would* take with zero traffic, and stores the answer.
 
@@ -73,7 +73,7 @@ callout(
     "<b>Why a ratio and not minutes?</b> Different roads are different lengths. "
     "A 60-second delay on a 1 km road is a disaster; the same 60 seconds on a "
     "10 km road is normal. The Congestion Ratio compares each road to its own "
-    "free-flow baseline, so all 28 roads can be compared on the same scale.",
+    "free-flow baseline, so all 38 roads can be compared on the same scale.",
     kind="neutral",
     title="Method note",
 )
